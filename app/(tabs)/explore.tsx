@@ -7,6 +7,7 @@ import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { IconSymbol } from '@/components/ui/IconSymbol';
+import { StateDemo } from '@/components/StateDemo';
 
 export default function TabTwoScreen() {
   return (
@@ -21,9 +22,13 @@ export default function TabTwoScreen() {
         />
       }>
       <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Explore</ThemedText>
+        <ThemedText type="title">State Management</ThemedText>
       </ThemedView>
-      <ThemedText>This app includes example code to help you get started.</ThemedText>
+      <ThemedText>VoiceLog Phase 3: Zustand state management implementation.</ThemedText>
+      
+      <Collapsible title="Zustand Store Demo">
+        <StateDemo />
+      </Collapsible>
       <Collapsible title="File-based routing">
         <ThemedText>
           This app has two screens:{' '}
@@ -105,6 +110,6 @@ const styles = StyleSheet.create({
   },
   titleContainer: {
     flexDirection: 'row',
-    gap: 8,
+    alignItems: 'center',
   },
 });
