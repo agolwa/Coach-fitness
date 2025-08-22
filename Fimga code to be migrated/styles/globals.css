@@ -1,0 +1,327 @@
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  /* Uber Base Design System - Light Theme */
+  --font-size: 14px;
+  
+  /* Core Colors - Uber's characteristic palette */
+  --background: #ffffff;
+  --foreground: #202020;
+  --card: #ffffff;
+  --card-foreground: #202020;
+  --popover: #ffffff;
+  --popover-foreground: #202020;
+  
+  /* Primary - Uber Green */
+  --primary: #00b561;
+  --primary-foreground: #ffffff;
+  
+  /* Secondary - Neutral grays */
+  --secondary: #f6f6f6;
+  --secondary-foreground: #202020;
+  
+  /* Muted - Light grays for subtle elements */
+  --muted: #f6f6f6;
+  --muted-foreground: #6b7280;
+  
+  /* Accent - Slightly darker than secondary */
+  --accent: #f1f1f1;
+  --accent-foreground: #202020;
+  
+  /* Destructive - Uber's red for errors */
+  --destructive: #e53e3e;
+  --destructive-foreground: #ffffff;
+  
+  /* Borders and inputs */
+  --border: #e5e5e5;
+  --input: #ffffff;
+  --input-background: #ffffff;
+  --switch-background: #e5e5e5;
+  
+  /* Focus ring */
+  --ring: #00b561;
+  
+  /* Typography weights */
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+  --font-weight-semibold: 600;
+  
+  /* Radius - Clean, modern but not overly rounded */
+  --radius: 8px;
+  
+  /* Chart colors */
+  --chart-1: #00b561;
+  --chart-2: #059669;
+  --chart-3: #0891b2;
+  --chart-4: #7c3aed;
+  --chart-5: #db2777;
+  
+  /* Sidebar (if needed) */
+  --sidebar: #ffffff;
+  --sidebar-foreground: #202020;
+  --sidebar-primary: #00b561;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f6f6f6;
+  --sidebar-accent-foreground: #202020;
+  --sidebar-border: #e5e5e5;
+  --sidebar-ring: #00b561;
+}
+
+.dark {
+  /* Dark theme with Uber's approach */
+  --background: #000000;
+  --foreground: #ffffff;
+  --card: #111111;
+  --card-foreground: #ffffff;
+  --popover: #111111;
+  --popover-foreground: #ffffff;
+  --primary: #00b561;
+  --primary-foreground: #ffffff;
+  --secondary: #1a1a1a;
+  --secondary-foreground: #ffffff;
+  --muted: #1a1a1a;
+  --muted-foreground: #9ca3af;
+  --accent: #1f1f1f;
+  --accent-foreground: #ffffff;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: #2a2a2a;
+  --input: #111111;
+  --input-background: #111111;
+  --switch-background: #2a2a2a;
+  --ring: #00b561;
+  --sidebar: #000000;
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: #00b561;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #1a1a1a;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #2a2a2a;
+  --sidebar-ring: #00b561;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-input-background: var(--input-background);
+  --color-switch-background: var(--switch-background);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 2px);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  }
+
+  /* Smooth theme transitions */
+  html {
+    transition: background-color 0.3s ease;
+  }
+}
+
+/**
+ * Uber-inspired typography system
+ */
+@layer base {
+  :where(:not(:has([class*=" text-"]), :not(:has([class^="text-"])))) {
+    h1 {
+      font-size: 2rem;
+      font-weight: var(--font-weight-semibold);
+      line-height: 1.25;
+      letter-spacing: -0.025em;
+    }
+
+    h2 {
+      font-size: 1.5rem;
+      font-weight: var(--font-weight-semibold);
+      line-height: 1.33;
+      letter-spacing: -0.025em;
+    }
+
+    h3 {
+      font-size: 1.25rem;
+      font-weight: var(--font-weight-medium);
+      line-height: 1.4;
+    }
+
+    h4 {
+      font-size: 1rem;
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    p {
+      font-size: 1rem;
+      font-weight: var(--font-weight-normal);
+      line-height: 1.5;
+    }
+
+    label {
+      font-size: 0.875rem;
+      font-weight: var(--font-weight-medium);
+      line-height: 1.43;
+      letter-spacing: 0.005em;
+    }
+
+    button {
+      font-size: 1rem;
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    input, textarea {
+      font-size: 1rem;
+      font-weight: var(--font-weight-normal);
+      line-height: 1.5;
+    }
+  }
+}
+
+/* Uber-inspired utility classes */
+@layer utilities {
+  .button-uber-primary {
+    @apply bg-primary text-primary-foreground rounded-md px-6 py-3 transition-all duration-200 hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring;
+  }
+  
+  .button-uber-secondary {
+    @apply bg-secondary text-secondary-foreground border border-border rounded-md px-6 py-3 transition-all duration-200 hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring;
+  }
+  
+  .button-uber-tertiary {
+    @apply text-destructive bg-transparent border-none px-0 py-0 transition-all duration-200 hover:text-destructive/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring;
+  }
+  
+  .card-uber {
+    @apply bg-card text-card-foreground rounded-lg border border-border transition-all duration-300;
+  }
+  
+  .input-uber {
+    @apply bg-input-background border border-border rounded-md px-3 py-2 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent;
+  }
+
+  /* Theme transition utilities */
+  .theme-transition {
+    @apply transition-all duration-300 ease-in-out;
+  }
+}
+
+html {
+  font-size: var(--font-size);
+}
+
+/* Textarea component with custom scrollbar */
+@layer components {
+  .textarea-uber {
+    @apply bg-input-background border border-border rounded-md px-3 py-2 focus:outline-none focus:border-muted-foreground resize-none;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+  
+  .textarea-uber::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .textarea-uber::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .textarea-uber::-webkit-scrollbar-thumb {
+    background-color: var(--border);
+    border-radius: 3px;
+  }
+  
+  .textarea-uber::-webkit-scrollbar-thumb:hover {
+    background-color: var(--muted-foreground);
+  }
+
+  /* Terms and Conditions content protection */
+  .terms-content {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+    pointer-events: auto;
+  }
+
+  .terms-content * {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+
+  .terms-content::selection {
+    background: transparent;
+  }
+
+  .terms-content::-moz-selection {
+    background: transparent;
+  }
+
+  .terms-content *::selection {
+    background: transparent;
+  }
+
+  .terms-content *::-moz-selection {
+    background: transparent;
+  }
+
+  /* Custom scrollbar for terms content */
+  .terms-content::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .terms-content::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .terms-content::-webkit-scrollbar-thumb {
+    background-color: var(--border);
+    border-radius: 3px;
+  }
+  
+  .terms-content::-webkit-scrollbar-thumb:hover {
+    background-color: var(--muted-foreground);
+  }
+}

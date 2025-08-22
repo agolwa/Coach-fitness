@@ -1,0 +1,124 @@
+# Coach Fitness App Tech Stack Documentation
+
+The preferred tech stack for the Coach fitness app and Figma component migration.
+
+You are permitted to expand upon it with new tools, but you can't replace any of these without first getting explicit permission.
+
+For anything not explicitly outlined, always prefer built-in Expo solutions.
+
+## Frontend
+
+### Core
+
+- React Native via Expo SDK 53 (already configured)
+- TypeScript (already configured)
+- EAS Build for deployment
+
+### Data Flow & State
+
+- Zustand v5.0.8 for state management (current setup)
+- AsyncStorage for data persistence (React Native local storage)
+- React Hook Form v7.62.0 for form state management
+
+### Navigation
+
+- Expo Router (file-based routing, current setup)
+- React Navigation v7.x (underlying navigation system)
+- Expo Linking for deep linking (if needed)
+
+### UI, Styling, & Interactivity
+
+- NativeWind v4.1.23 for styling approach (Tailwind CSS for React Native)
+- React Native Reanimated v3.17.4 for animations
+- React Native Gesture Handler for touch interactions
+- Lucide React Native v0.540.0 for consistent iconography
+- Expo Haptics for tactile feedback
+- Custom component library (migrated from shadcn/ui)
+
+### Networking
+
+- Fetch API for HTTP requests
+- React Native's built-in networking
+
+### Data Storage
+
+- AsyncStorage for local app data and preferences
+- Zustand persistence middleware for state hydration
+
+### Testing
+
+- Jest v29.7.0 for unit testing (current setup)
+- React Testing Library v13.3.1 for component testing
+- Detox v20.40.2 for E2E testing
+- Visual regression testing for component migration
+
+### Migration-Specific Tools
+
+- react-native-toast-message (replacement for sonner)
+- React Native Modal (replacement for web dialogs)
+- React Native Picker (replacement for web select elements)
+- Custom implementations for complex shadcn/ui components
+
+## Component Migration Strategy
+
+### Preferred React Native Equivalents
+
+- `View` instead of `div`
+- `Text` instead of `span`, `p`, `h1-h6`
+- `TextInput` instead of `input`
+- `Pressable` instead of `button`
+- `ScrollView` instead of scrollable `div`
+- `FlatList`/`SectionList` for large lists instead of map rendering
+- `Modal` instead of web modals/dialogs
+
+### Styling Approach
+
+- **Primary**: NativeWind classes (maintain Tailwind compatibility)
+- **Secondary**: StyleSheet for complex native-specific styling
+- **Avoid**: Inline styles except for dynamic values
+
+### State Management Patterns
+
+- **Global State**: Zustand stores with AsyncStorage persistence
+- **Form State**: React Hook Form with custom validation
+- **Component State**: React useState for local component state
+- **Server State**: Built-in fetch with Zustand for caching
+
+### Animation Preferences
+
+- **Primary**: React Native Reanimated v3 for performant animations
+- **Secondary**: React Native's built-in Animated API for simple animations
+- **Avoid**: CSS-based animations (not available in React Native)
+
+## Key Migration Principles
+
+1. **Maintain Component APIs**: Keep prop interfaces consistent where possible
+2. **Mobile-First Design**: Adapt layouts for mobile screen constraints
+3. **Touch-Friendly Interactions**: Replace hover states with press states
+4. **Performance Conscious**: Use FlatList for large datasets, optimize images
+5. **Accessibility Focused**: Implement React Native accessibility props
+6. **Type Safety**: Maintain strict TypeScript throughout migration
+
+## Build & Development
+
+### Development Workflow
+
+- Expo CLI for development server
+- Metro bundler (built into Expo)
+- React Native Debugger for debugging
+- Expo development build for testing
+
+### Code Quality
+
+- ESLint with Expo config (current setup)
+- TypeScript strict mode
+- Prettier for code formatting
+- Husky for pre-commit hooks (if needed)
+
+### Performance Monitoring
+
+- React Native's built-in performance monitor
+- Expo's development tools for bundle analysis
+- Custom performance benchmarks for migrated components
+
+This tech stack focuses on leveraging the existing, working architecture while providing clear guidance for the Figma component migration process.
