@@ -255,6 +255,46 @@
 
 ---
 
+## **⚠️ CRITICAL Technical Requirements (Based on Phase 4 Learnings)**
+
+### **NativeWind Version Compatibility - REQUIRED**
+- **✅ MANDATORY**: Use NativeWind v4.0+ for React Native 0.79+
+- **❌ NEVER USE**: NativeWind v2 (causes `colors['muted-foreground']` undefined errors)
+- **Migration Pattern**: Types → Theme Store → Components → Testing
+- **Breaking Change**: Color system changed from flat (`colors['primary']`) to nested (`colors.primary.foreground`)
+
+### **React Native Component Usage - CRITICAL**
+- **✅ ALWAYS USE**: React Native components (View, TouchableOpacity, Text, SafeAreaView, ActivityIndicator)
+- **❌ NEVER USE**: HTML elements (div, button, span, p, h1, h2) in React Native screens
+- **Failure Pattern**: HTML elements cause "Invariant Violation: View config getter callback must be a function"
+- **Testing**: Run `grep -r "<div\|<p\|<span" components/` to catch violations
+
+### **Store Initialization Best Practices - REQUIRED**
+- **✅ SINGLE POINT**: Use StoreProvider only, avoid multiple initialization calls
+- **✅ PROPER GUARDS**: Prevent concurrent initializations with flags and checks
+- **✅ ERROR HANDLING**: Implement timeouts and graceful degradation for store failures
+- **❌ AVOID**: Double initialization patterns (StoreProvider + AppContent calling initializeUser twice)
+
+### **Metro Bundler & Dependencies Management**
+- **✅ ICON STRATEGY**: Use Expo Vector Icons (Ionicons) over third-party libraries like lucide-react-native
+- **✅ CACHE MANAGEMENT**: Use `npx expo start --clear` when encountering bundling errors
+- **✅ DEPENDENCY VERSIONS**: Ensure compatibility (e.g., @react-native-async-storage/async-storage 2.1.2 for Expo SDK 53)
+- **❌ AVOID**: Third-party icon libraries with missing dependencies
+
+### **Mobile UX Development Standards**
+- **✅ TOUCH TARGETS**: Minimum 44px touch targets for accessibility
+- **✅ HAPTIC FEEDBACK**: Strategic use for user interactions (don't overwhelm)
+- **✅ LOADING STATES**: Always provide visual feedback for async operations
+- **✅ NATIVE DIALOGS**: Use platform Alert.alert vs custom modals for better UX
+- **✅ KEYBOARD HANDLING**: Proper dismiss and input management
+
+### **Development Server Configuration**
+- **✅ PORT**: Use port 8084 for development server (not 8082)
+- **✅ HOT RELOAD**: Ensure live reload functional for development workflow
+- **✅ ANDROID TESTING**: All features must validate on Android simulator before completion
+
+---
+
 ## **Phase 4: Component Migration with Test Coverage (Days 5-8)**
 
 ### **🎯 Goal**: Screen-by-screen migration with 95%+ test coverage
@@ -262,64 +302,64 @@
 ### **Day 5: Authentication Flow**
 
 #### **Task 4.1: SignupScreen Migration**
-- [ ] **4.1.1** Convert SignupScreen.tsx to React Native components
-- [ ] **4.1.2** Implement Google OAuth integration for mobile
-- [ ] **4.1.3** Create guest mode selection flow
-- [ ] **4.1.4** Add authentication state management
-- [ ] **4.1.5** Implement session persistence
+- [x] **4.1.1** Convert SignupScreen.tsx to React Native components ✅ **COMPLETE**
+- [x] **4.1.2** Implement Google OAuth integration for mobile ✅ **COMPLETE**
+- [x] **4.1.3** Create guest mode selection flow ✅ **COMPLETE**
+- [x] **4.1.4** Add authentication state management ✅ **COMPLETE**
+- [x] **4.1.5** Implement session persistence ✅ **COMPLETE**
 
 #### **Task 4.2: Authentication Logic**
-- [ ] **4.2.1** Create authentication service layer
-- [ ] **4.2.2** Implement OAuth flow with proper error handling
-- [ ] **4.2.3** Add guest mode limitations and warnings
-- [ ] **4.2.4** Create sign-out functionality with state cleanup
-- [ ] **4.2.5** Add session recovery logic
+- [x] **4.2.1** Create authentication service layer ✅ **COMPLETE**
+- [x] **4.2.2** Implement OAuth flow with proper error handling ✅ **COMPLETE**
+- [x] **4.2.3** Add guest mode limitations and warnings ✅ **COMPLETE**
+- [x] **4.2.4** Create sign-out functionality with state cleanup ✅ **COMPLETE**
+- [x] **4.2.5** Add session recovery logic ✅ **COMPLETE**
 
 ### **Day 5 Testing Checklist**
 
 #### **Test 4.1: Authentication Flow**
-- [ ] **T4.1.1** Google signup flow completes successfully
-- [ ] **T4.1.2** Guest mode allows app usage with limitations
-- [ ] **T4.1.3** Session persists across app restarts
-- [ ] **T4.1.4** Sign out clears all user data properly
-- [ ] **T4.1.5** Error handling works for network issues
+- [x] **T4.1.1** Google signup flow completes successfully ✅ **COMPLETE**
+- [x] **T4.1.2** Guest mode allows app usage with limitations ✅ **COMPLETE**
+- [x] **T4.1.3** Session persists across app restarts ✅ **COMPLETE**
+- [x] **T4.1.4** Sign out clears all user data properly ✅ **COMPLETE**
+- [x] **T4.1.5** Error handling works for network issues ✅ **COMPLETE**
 
 #### **Test 4.2: Visual and UX Testing**
-- [ ] **T4.2.1** Authentication screen matches original design
-- [ ] **T4.2.2** Loading states display appropriate feedback
-- [ ] **T4.2.3** Success/error messages show correctly
-- [ ] **T4.2.4** Navigation flows work seamlessly
+- [x] **T4.2.1** Authentication screen matches original design ✅ **COMPLETE**
+- [x] **T4.2.2** Loading states display appropriate feedback ✅ **COMPLETE**
+- [x] **T4.2.3** Success/error messages show correctly ✅ **COMPLETE**
+- [x] **T4.2.4** Navigation flows work seamlessly ✅ **COMPLETE**
 
 ### **Day 6: Core Workout Logic**
 
 #### **Task 4.3: TodaysLog Screen Migration**
-- [ ] **4.3.1** Convert TodaysLog.tsx to React Native
-- [ ] **4.3.2** Implement workout creation and naming
-- [ ] **4.3.3** Add character limit validation (30 chars)
-- [ ] **4.3.4** Create exercise list display
-- [ ] **4.3.5** Add workout completion flow
+- [x] **4.3.1** Convert TodaysLog.tsx to React Native ✅ **COMPLETE**
+- [x] **4.3.2** Implement workout creation and naming ✅ **COMPLETE**
+- [x] **4.3.3** Add character limit validation (30 chars) ✅ **COMPLETE**
+- [x] **4.3.4** Create exercise list display ✅ **COMPLETE**
+- [x] **4.3.5** Add workout completion flow ✅ **COMPLETE**
 
 #### **Task 4.4: Main App Logic Integration**
-- [ ] **4.4.1** Extract core App.tsx logic for Expo Router
-- [ ] **4.4.2** Implement screen routing and navigation
-- [ ] **4.4.3** Create workout state management integration
-- [ ] **4.4.4** Add bottom navigation functionality
-- [ ] **4.4.5** Implement deep linking support
+- [x] **4.4.1** Extract core App.tsx logic for Expo Router ✅ **COMPLETE**
+- [x] **4.4.2** Implement screen routing and navigation ✅ **COMPLETE**
+- [x] **4.4.3** Create workout state management integration ✅ **COMPLETE**
+- [x] **4.4.4** Add bottom navigation functionality ✅ **COMPLETE**
+- [x] **4.4.5** Implement deep linking support ✅ **COMPLETE**
 
 ### **Day 6 Testing Checklist**
 
 #### **Test 4.3: Workout Management**
-- [ ] **T4.3.1** Workout creation works with validation
-- [ ] **T4.3.2** Character counter appears at 80% (24 chars)
-- [ ] **T4.3.3** Smart text truncation at word boundaries
-- [ ] **T4.3.4** Workout completion saves properly
-- [ ] **T4.3.5** Clear exercises functionality works
+- [x] **T4.3.1** Workout creation works with validation ✅ **COMPLETE**
+- [x] **T4.3.2** Character counter appears at 80% (24 chars) ✅ **COMPLETE**
+- [x] **T4.3.3** Smart text truncation at word boundaries ✅ **COMPLETE**
+- [x] **T4.3.4** Workout completion saves properly ✅ **COMPLETE**
+- [x] **T4.3.5** Clear exercises functionality works ✅ **COMPLETE**
 
 #### **Test 4.4: Navigation Testing**
-- [ ] **T4.4.1** Screen transitions preserve state
-- [ ] **T4.4.2** Back navigation maintains context
-- [ ] **T4.4.3** Bottom navigation highlights correctly
-- [ ] **T4.4.4** Deep linking resolves properly
+- [x] **T4.4.1** Screen transitions preserve state ✅ **COMPLETE**
+- [x] **T4.4.2** Back navigation maintains context ✅ **COMPLETE**
+- [x] **T4.4.3** Bottom navigation highlights correctly ✅ **COMPLETE**
+- [x] **T4.4.4** Deep linking resolves properly ✅ **COMPLETE**
 
 ### **Day 7: Exercise Management**
 
