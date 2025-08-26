@@ -9,6 +9,7 @@ import { useWorkoutStore } from '../stores/workout-store';
 import { useUserStore } from '../stores/user-store';
 import { useExerciseStore } from '../stores/exercise-store';
 import { useThemeStore } from '../stores/theme-store';
+import { useNavigationStore } from '../stores/navigation-store';
 import { useTheme } from '../hooks/use-theme';
 
 interface StoreProviderProps {
@@ -20,6 +21,7 @@ export function StoreProvider({ children }: StoreProviderProps) {
   const initializeUser = useUserStore(state => state.initializeUser);
   const loadExercises = useExerciseStore(state => state.loadExercises);
   const initializeTheme = useThemeStore(state => state.initializeTheme);
+  const initializeNavigation = useNavigationStore(state => state.initializeNavigation);
 
   // Sync weight unit changes between workout and user stores
   const workoutExercises = useWorkoutStore(state => state.exercises);
@@ -37,6 +39,7 @@ export function StoreProvider({ children }: StoreProviderProps) {
           initializeUser?.() || Promise.resolve(),
           loadExercises?.() || Promise.resolve(),
           initializeWorkout?.() || Promise.resolve(),
+          initializeNavigation?.() || Promise.resolve(),
         ]).then(() => {
           console.log('All stores initialized successfully');
         }).catch((error) => {
@@ -51,7 +54,7 @@ export function StoreProvider({ children }: StoreProviderProps) {
     };
 
     initializeStores();
-  }, [initializeTheme, initializeUser, loadExercises, initializeWorkout]);
+  }, [initializeTheme, initializeUser, loadExercises, initializeWorkout, initializeNavigation]);
 
   // Sync weight unit locking with workout state
   useEffect(() => {
