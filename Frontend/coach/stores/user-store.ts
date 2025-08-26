@@ -270,7 +270,6 @@ export const useUserStore = create<UserStore>()(
             if (prefData.authState === 'signed-in' || prefData.authState === 'guest') {
               // For now, we trust stored auth state
               // In production, this would validate tokens with the backend
-              console.log('Recovering user session:', prefData.authState);
               
               set({
                 ...prefData,

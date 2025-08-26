@@ -9,11 +9,11 @@ import {
   Text,
   TouchableOpacity,
   ScrollView,
-  SafeAreaView,
   Switch,
   Alert,
   Platform,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -25,6 +25,7 @@ import { useTheme } from '@/hooks/use-theme';
 import type { WeightUnit } from '@/types/workout';
 
 export default function ProfileScreen() {
+  const insets = useSafeAreaInsets();
   const {
     weightUnit,
     setWeightUnit,
@@ -130,7 +131,7 @@ export default function ProfileScreen() {
   ];
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
+    <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
       {/* Header */}
       <View className="px-6 py-4 flex-shrink-0">
         <View className="flex-row items-center gap-4">
@@ -364,6 +365,6 @@ export default function ProfileScreen() {
           )}
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }

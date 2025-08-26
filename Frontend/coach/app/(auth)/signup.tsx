@@ -3,12 +3,11 @@ import {
   View, 
   Text, 
   TouchableOpacity, 
-  SafeAreaView, 
-  StatusBar as RNStatusBar,
   Dimensions,
   Alert,
   ActivityIndicator 
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
@@ -35,6 +34,7 @@ function GoogleIcon({ size = 20 }: GoogleIconProps) {
 }
 
 export default function SignupScreen() {
+  const insets = useSafeAreaInsets();
   const { signIn, continueAsGuest } = useUserStore();
   const colors = useThemeColors();
   const [isSigningIn, setIsSigningIn] = useState(false);
@@ -136,17 +136,14 @@ export default function SignupScreen() {
   };
 
   return (
-    <SafeAreaView style={{ 
+    <View style={{ 
       flex: 1, 
       backgroundColor: colors.background,
       maxWidth: 440,
       alignSelf: 'center',
-      width: '100%'
+      width: '100%',
+      paddingTop: insets.top
     }}>
-      <RNStatusBar 
-        barStyle="default" 
-        backgroundColor={colors.background}
-      />
       
       {/* Header with back button */}
       <View style={{
@@ -356,6 +353,6 @@ export default function SignupScreen() {
           </Text>
         </View>
       </View>
-    </SafeAreaView>
+    </View>
   );
 }

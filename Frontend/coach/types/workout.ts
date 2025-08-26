@@ -186,6 +186,13 @@ export interface ExerciseActions {
   selectAllExercises: () => void;
   clearSelection: () => void;
   getSelectedExercises: () => SelectedExercise[];
+
+  // Utility methods
+  getFilteredExercises: () => SelectedExercise[];
+  getMuscleGroups: () => string[];
+  getEquipmentTypes: () => string[];
+  getExerciseCount: () => { total: number; filtered: number; selected: number; };
+  clearError: () => void;
 }
 
 export interface UIActions {
@@ -260,9 +267,9 @@ export const STORAGE_KEYS = {
 export const DEFAULT_USER_PREFERENCES: UserPreferences = {
   weightUnit: 'kg',
   canChangeWeightUnit: true,
-  authState: 'pending',
+  authState: 'guest',
   isSignedIn: false,
-  isGuest: false,
+  isGuest: true,
 };
 
 export const DEFAULT_WORKOUT_SESSION: WorkoutSession = {
@@ -273,7 +280,7 @@ export const DEFAULT_WORKOUT_SESSION: WorkoutSession = {
 };
 
 export const DEFAULT_UI_STATE: UIState = {
-  currentScreen: 'signup',
+  currentScreen: 'home',
   showDeleteDialog: false,
   showEndWorkoutDialog: false,
   showCelebration: false,

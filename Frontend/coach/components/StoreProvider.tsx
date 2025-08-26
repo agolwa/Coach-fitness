@@ -25,30 +25,27 @@ export function StoreProvider({ children }: StoreProviderProps) {
   const workoutExercises = useWorkoutStore(state => state.exercises);
   const setCanChangeWeightUnit = useUserStore(state => state.setCanChangeWeightUnit);
 
-  // Initialize all stores on mount
+  // Initialize all stores on mount (non-blocking)
   useEffect(() => {
     const initializeStores = async () => {
       try {
         console.log('Starting store initialization...');
         
-        // Initialize stores in parallel for better performance with timeout
-        const initPromise = Promise.all([
+        // Initialize stores in parallel - don't await, let them load in background
+        Promise.all([
           initializeTheme?.() || Promise.resolve(),
           initializeUser?.() || Promise.resolve(),
           loadExercises?.() || Promise.resolve(),
           initializeWorkout?.() || Promise.resolve(),
-        ]);
-
-        // Add 10 second timeout to prevent infinite loading
-        const timeoutPromise = new Promise((_, reject) => {
-          setTimeout(() => reject(new Error('Store initialization timeout')), 10000);
+        ]).then(() => {
+          console.log('All stores initialized successfully');
+        }).catch((error) => {
+          console.warn('Some stores failed to initialize:', error);
+          // Continue anyway - don't block the app
         });
-
-        await Promise.race([initPromise, timeoutPromise]);
-        console.log('Store initialization completed successfully');
         
       } catch (error) {
-        console.warn('Failed to initialize some stores:', error);
+        console.warn('Failed to initialize stores:', error);
         // Continue anyway - don't block the app
       }
     };
@@ -66,15 +63,16 @@ export function StoreProvider({ children }: StoreProviderProps) {
 }
 
 /**
- * Hook to check if all stores are initialized
+ * Hook to check if all stores are initialized (non-blocking - always returns ready)
  */
 export function useStoreInitialization() {
-  const themeLoading = useThemeStore(state => false); // Theme store doesn't have loading state
   const userLoading = useUserStore(state => state.isLoading);
   const exerciseLoading = useExerciseStore(state => state.isLoading);
   const workoutLoading = useWorkoutStore(state => state.isLoading);
 
-  const isInitialized = !userLoading && !exerciseLoading && !workoutLoading;
+  // Consider stores initialized when user store is done loading
+  // This ensures we have auth state before rendering
+  const isInitialized = !userLoading;
   const hasErrors = useUserStore(state => state.error) || 
                    useExerciseStore(state => state.error) || 
                    useWorkoutStore(state => state.error);

@@ -9,10 +9,10 @@ import {
   Text,
   TouchableOpacity,
   ScrollView,
-  SafeAreaView,
   Alert,
   ActivityIndicator,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -36,6 +36,7 @@ const dateFilterOptions: DateFilterOption[] = [
 ];
 
 export default function ActivityScreen() {
+  const insets = useSafeAreaInsets();
   // Store state
   const workoutStore = useWorkoutStore();
   const userStore = useUserStore();
@@ -185,7 +186,7 @@ export default function ActivityScreen() {
   const colors = theme.colors;
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
+    <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
       {/* Header */}
       <View className="px-6 py-4">
         <View className="flex-row items-center gap-3">
@@ -398,6 +399,6 @@ export default function ActivityScreen() {
           </View>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }

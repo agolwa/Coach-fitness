@@ -5,12 +5,12 @@ import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 import '../global.css';
 
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { useTheme } from '@/hooks/use-theme';
 import { StoreProvider, useStoreInitialization, StoreLoadingScreen } from '@/components/StoreProvider';
 import { useUserStore } from '@/stores/user-store';
 
 function AppContent() {
-  const colorScheme = useColorScheme();
+  const { colorScheme, isDark } = useTheme();
   const { isInitialized, hasErrors } = useStoreInitialization();
   const { authState, isLoading } = useUserStore();
 
@@ -24,16 +24,14 @@ function AppContent() {
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
       <Stack>
-        {authState === 'pending' ? (
-          <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-        ) : (
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        )}
+        <Stack.Screen name="index" options={{ headerShown: false }} />
+        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="(modal)" options={{ headerShown: false }} />
         <Stack.Screen name="+not-found" />
       </Stack>
-      <StatusBar style="auto" />
     </ThemeProvider>
   );
 }

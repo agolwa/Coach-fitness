@@ -10,12 +10,11 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
-  SafeAreaView,
   Alert,
   Keyboard,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { StatusBar } from 'expo-status-bar';
 import * as Haptics from 'expo-haptics';
 
 import { TodaysLog } from '@/components/TodaysLog';
@@ -25,6 +24,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { router } from 'expo-router';
 
 export default function HomeScreen() {
+  const insets = useSafeAreaInsets();
   const { theme } = useTheme();
   const { authState } = useUserStore();
   const {
@@ -86,6 +86,8 @@ export default function HomeScreen() {
 
   // Handle add exercises navigation
   const handleAddExercises = () => {
+    console.log('Add exercises button pressed');
+    console.log('Navigation to add-exercises triggered');
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.push('/(modal)/add-exercises');
   };
@@ -177,8 +179,7 @@ export default function HomeScreen() {
   const hasValidSets = canEndWorkout();
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
-      <StatusBar style="auto" />
+    <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
       
       <ScrollView 
         className="flex-1"
@@ -294,6 +295,6 @@ export default function HomeScreen() {
           </View>
         </View>
       )}
-    </SafeAreaView>
+    </View>
   );
 }

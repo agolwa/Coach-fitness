@@ -8,15 +8,7 @@ export default function ModalLayout() {
         options={{
           title: 'Add Exercises',
           presentation: 'modal',
-          headerShown: true,
-        }}
-      />
-      <Stack.Screen
-        name="exercise-detail/[id]"
-        options={{
-          title: 'Exercise Details',
-          presentation: 'modal',
-          headerShown: true,
+          headerShown: false,
         }}
       />
     </Stack>
