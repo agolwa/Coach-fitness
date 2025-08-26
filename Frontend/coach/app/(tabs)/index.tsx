@@ -12,6 +12,8 @@ import {
   ScrollView,
   Alert,
   Keyboard,
+  Animated,
+  Modal,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -22,6 +24,7 @@ import { useWorkoutStore } from '@/stores/workout-store';
 import { useUserStore } from '@/stores/user-store';
 import { useTheme } from '@/hooks/use-theme';
 import { router } from 'expo-router';
+import { WORKOUT_CONSTANTS } from '@/types/workout';
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
@@ -34,6 +37,7 @@ export default function HomeScreen() {
     updateWorkoutTitle,
     clearWorkout,
     endWorkout,
+    saveWorkout,
     canEndWorkout,
   } = useWorkoutStore();
 
@@ -41,7 +45,9 @@ export default function HomeScreen() {
   const [workoutTitle, setWorkoutTitle] = useState(title || '');
   const [showCharacterCounter, setShowCharacterCounter] = useState(false);
   const [showEndWorkoutDialog, setShowEndWorkoutDialog] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const celebrationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Constants
   const MAX_TITLE_LENGTH = 30;
@@ -133,7 +139,7 @@ export default function HomeScreen() {
   };
 
   // Confirm end workout
-  const handleConfirmEndWorkout = () => {
+  const handleConfirmEndWorkout = async () => {
     setShowEndWorkoutDialog(false);
     
     if (authState === 'guest') {
@@ -145,7 +151,7 @@ export default function HomeScreen() {
             text: 'Continue as Guest',
             style: 'destructive',
             onPress: () => {
-              endWorkout(false); // Don't save for guests
+              endWorkout(); // Just clear workout for guests
               setWorkoutTitle('');
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             },
@@ -160,17 +166,41 @@ export default function HomeScreen() {
       );
     } else {
       // Save workout for signed-in users
-      endWorkout(true);
-      setWorkoutTitle('');
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      try {
+        await saveWorkout(); // Actually save the workout to history
+        setWorkoutTitle('');
+        
+        // Show celebration after successful save
+        setShowCelebration(true);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        
+        // Auto-hide celebration after 3 seconds
+        celebrationTimeoutRef.current = setTimeout(() => {
+          setShowCelebration(false);
+          // Additional success haptic after celebration
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        }, WORKOUT_CONSTANTS.CELEBRATION_DURATION);
+        
+      } catch (error) {
+        // Handle save error
+        Alert.alert(
+          'Error Saving Workout',
+          'There was an issue saving your workout. Please try again.',
+          [{ text: 'OK' }]
+        );
+        console.error('Failed to save workout:', error);
+      }
     }
   };
 
-  // Cleanup timeout on unmount
+  // Cleanup timeouts on unmount
   useEffect(() => {
     return () => {
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
+      }
+      if (celebrationTimeoutRef.current) {
+        clearTimeout(celebrationTimeoutRef.current);
       }
     };
   }, []);
@@ -295,6 +325,116 @@ export default function HomeScreen() {
           </View>
         </View>
       )}
+
+      {/* Celebration Modal */}
+      <Modal
+        visible={showCelebration}
+        transparent={true}
+        animationType="fade"
+        statusBarTranslucent={true}
+      >
+        <View className="absolute inset-0 bg-primary/10 flex-1 justify-center items-center">
+          <CelebrationCard />
+        </View>
+      </Modal>
     </View>
   );
 }
+
+// Celebration Card Component
+const CelebrationCard = () => {
+  const scaleValue = useRef(new Animated.Value(0)).current;
+  const rotateValue = useRef(new Animated.Value(0)).current;
+  const emojiScale = useRef(new Animated.Value(1)).current;
+  const emojiRotate = useRef(new Animated.Value(0)).current;
+
+  // Animation effects
+  useEffect(() => {
+    // Card entrance animation
+    Animated.sequence([
+      Animated.timing(scaleValue, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    // Emoji bounce animation
+    const emojiAnimation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(emojiScale, {
+          toValue: 1.2,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(emojiRotate, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(emojiScale, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(emojiRotate, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.delay(1000),
+      ])
+    );
+    
+    emojiAnimation.start();
+
+    return () => {
+      emojiAnimation.stop();
+    };
+  }, []);
+
+  const cardTransform = {
+    transform: [
+      { scale: scaleValue },
+      {
+        rotate: rotateValue.interpolate({
+          inputRange: [0, 1],
+          outputRange: ['0deg', '360deg'],
+        }),
+      },
+    ],
+  };
+
+  const emojiTransform = {
+    transform: [
+      { scale: emojiScale },
+      {
+        rotate: emojiRotate.interpolate({
+          inputRange: [0, 1],
+          outputRange: ['0deg', '20deg'],
+        }),
+      },
+    ],
+  };
+
+  return (
+    <Animated.View 
+      style={cardTransform}
+      className="bg-background rounded-2xl p-8 mx-6 shadow-2xl border border-primary/20"
+    >
+      <View className="items-center">
+        <Animated.Text style={emojiTransform} className="text-6xl mb-4">
+          🎉
+        </Animated.Text>
+        
+        <Text className="text-2xl text-primary mb-2 font-bold text-center">
+          Great Job!
+        </Text>
+        
+        <Text className="text-muted-foreground text-center">
+          Workout completed successfully
+        </Text>
+      </View>
+    </Animated.View>
+  );
+};

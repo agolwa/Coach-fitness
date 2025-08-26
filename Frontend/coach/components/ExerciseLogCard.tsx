@@ -6,7 +6,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { Card, CardContent } from './ui/card';
-import { useWorkoutStore } from '@/stores/workout-store';
+import { useRouter } from 'expo-router';
 import type { WorkoutExercise, Set } from '@/types/workout';
 import * as Haptics from 'expo-haptics';
 
@@ -145,13 +145,18 @@ function DataTable({ sets }: { sets: Set[] }) {
 
 // Main ExerciseLogCard Component
 export function ExerciseLogCard({ exercise }: ExerciseLogCardProps) {
-  const { navigateToExerciseDetail } = useWorkoutStore();
+  const router = useRouter();
 
   const handleEdit = () => {
     // Navigate to exercise detail screen for editing
-    // This will be implemented when we add navigation
     console.log('Edit exercise:', exercise.name);
-    navigateToExerciseDetail?.(exercise.id);
+    router.push({
+      pathname: '/(modal)/exercise-detail',
+      params: {
+        exerciseId: exercise.id.toString(),
+        exerciseName: exercise.name,
+      },
+    });
   };
 
   return (

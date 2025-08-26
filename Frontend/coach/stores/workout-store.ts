@@ -60,6 +60,20 @@ const debouncedPersistHistory = (history: WorkoutHistoryItem[]) => {
 // Utility functions
 const generateUniqueId = (): number => Date.now() + Math.floor(Math.random() * 1000);
 
+// Convert DetailSet array to Set array for display purposes
+const convertDetailSetsToSets = (detailSets: DetailSet[]): Set[] => {
+  if (!detailSets || detailSets.length === 0) {
+    return [];
+  }
+  
+  return detailSets.map((detailSet, index) => ({
+    set: (index + 1).toString(),
+    weight: detailSet.weight.toString(),
+    reps: detailSet.reps.toString(),
+    notes: detailSet.notes,
+  }));
+};
+
 const validateWorkoutExercise = (exercise: WorkoutExercise): boolean => {
   if (!exercise.detailSets || exercise.detailSets.length === 0) return false;
   
@@ -142,7 +156,11 @@ export const useWorkoutStore = create<WorkoutStore>()(
       const state = get();
       const updatedExercises = state.exercises.map((exercise) =>
         exercise.id === exerciseId
-          ? { ...exercise, detailSets: sets }
+          ? { 
+              ...exercise, 
+              detailSets: sets,
+              sets: convertDetailSetsToSets(sets)  // Convert to display format
+            }
           : exercise
       );
 
@@ -315,23 +333,22 @@ export const useWorkoutStore = create<WorkoutStore>()(
 
     loadWorkoutFromHistory: (workout: WorkoutHistoryItem) => {
       // Convert historical workout to current workout format
-      const newExercises: WorkoutExercise[] = workout.exercises.map((exercise) => ({
-        id: generateUniqueId(),
-        name: exercise.name,
-        sets: exercise.detailSets.map((set, index) => ({
-          set: (index + 1).toString(),
-          weight: set.weight.toString(),
-          reps: set.reps.toString(),
-          notes: set.notes,
-        })),
-        detailSets: exercise.detailSets.map((set, index) => ({
+      const newExercises: WorkoutExercise[] = workout.exercises.map((exercise) => {
+        const convertedDetailSets = exercise.detailSets.map((set, index) => ({
           id: index + 1,
           weight: set.weight,
           reps: set.reps,
           notes: set.notes,
-        })),
-        weightUnit: workout.weightUnit,
-      }));
+        }));
+        
+        return {
+          id: generateUniqueId(),
+          name: exercise.name,
+          sets: convertDetailSetsToSets(convertedDetailSets),
+          detailSets: convertedDetailSets,
+          weightUnit: workout.weightUnit,
+        };
+      });
 
       const newState = {
         exercises: newExercises,

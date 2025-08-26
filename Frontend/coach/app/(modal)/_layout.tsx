@@ -11,6 +11,14 @@ export default function ModalLayout() {
           headerShown: false,
         }}
       />
+      <Stack.Screen
+        name="exercise-detail"
+        options={{
+          title: 'Exercise Detail',
+          presentation: 'modal',
+          headerShown: false,
+        }}
+      />
     </Stack>
   );
 }
