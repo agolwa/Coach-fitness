@@ -102,8 +102,23 @@ export default function ProfileScreen() {
   };
 
   const handleNavigation = (screen: string) => {
-    // These will be implemented as modal screens later
-    console.log(`Navigate to ${screen}`);
+    // Navigate to the respective modal screens
+    switch (screen) {
+      case 'feedback':
+        router.push('/(modal)/feedback');
+        break;
+      case 'terms':
+        router.push('/(modal)/terms');
+        break;
+      case 'contact':
+        router.push('/(modal)/contact');
+        break;
+      case 'privacy':
+        router.push('/(modal)/privacy');
+        break;
+      default:
+        console.log(`Unknown screen: ${screen}`);
+    }
   };
 
   // Menu items configuration
@@ -111,22 +126,22 @@ export default function ProfileScreen() {
     {
       title: 'Feedback & feature requests',
       icon: 'chatbubble-outline' as const,
-      action: () => handleNavigation('suggestFeature'),
+      action: () => handleNavigation('feedback'),
     },
     {
       title: 'Terms & Conditions',
       icon: 'document-text-outline' as const,
-      action: () => handleNavigation('termsAndConditions'),
+      action: () => handleNavigation('terms'),
     },
     {
       title: 'Contact Us',
       icon: 'mail-outline' as const,
-      action: () => handleNavigation('contactUs'),
+      action: () => handleNavigation('contact'),
     },
     {
       title: 'Privacy Policy',
       icon: 'shield-checkmark-outline' as const,
-      action: () => handleNavigation('privacyPolicy'),
+      action: () => handleNavigation('privacy'),
     },
   ];
 

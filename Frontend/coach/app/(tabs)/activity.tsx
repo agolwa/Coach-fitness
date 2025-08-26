@@ -73,9 +73,13 @@ export default function ActivityScreen() {
     const currentCount = displayedWorkouts.length;
     const nextWorkouts = filteredWorkouts.slice(currentCount, currentCount + WORKOUTS_PER_PAGE);
     
-    setDisplayedWorkouts(prev => [...prev, ...nextWorkouts]);
+    // Defensive deduplication: filter out workouts that are already displayed
+    const currentWorkoutIds = new Set(displayedWorkouts.map(w => w.id));
+    const uniqueNextWorkouts = nextWorkouts.filter(workout => !currentWorkoutIds.has(workout.id));
+    
+    setDisplayedWorkouts(prev => [...prev, ...uniqueNextWorkouts]);
     setIsLoading(false);
-  }, [displayedWorkouts.length, filteredWorkouts]);
+  }, [displayedWorkouts, filteredWorkouts]);
 
   // Check if there are more workouts to load
   const hasMoreWorkouts = displayedWorkouts.length < filteredWorkouts.length;
@@ -117,7 +121,7 @@ export default function ActivityScreen() {
   const handleWorkoutClick = (workout: WorkoutHistoryItem) => {
     // Navigate to workout detail screen
     router.push({
-      pathname: '/workout/[id]',
+      pathname: '/(modal)/workout-detail',
       params: { id: workout.id.toString() }
     });
   };
@@ -301,9 +305,9 @@ export default function ActivityScreen() {
               </View>
             )}
             
-            {displayedWorkouts.map((workout) => (
+            {displayedWorkouts.map((workout, index) => (
               <TouchableOpacity
-                key={workout.id}
+                key={workout.id || `workout-${index}`}
                 onPress={() => handleWorkoutClick(workout)}
                 className="bg-card border border-border rounded-xl p-6 mb-4"
               >
@@ -356,7 +360,7 @@ export default function ActivityScreen() {
                 {/* Exercise Preview */}
                 <View className="gap-2">
                   {workout.exercises.slice(0, 3).map((exercise, index) => (
-                    <View key={index} className="flex-row items-center justify-between">
+                    <View key={`${workout.id}-exercise-${index}`} className="flex-row items-center justify-between">
                       <Text 
                         className="text-foreground flex-1" 
                         numberOfLines={1}
