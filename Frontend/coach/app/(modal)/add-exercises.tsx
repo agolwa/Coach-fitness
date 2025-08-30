@@ -20,6 +20,7 @@ import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 
 import { useExerciseStore } from '@/stores/exercise-store';
+import { useExercises, useExerciseBodyParts, useExerciseEquipment, useOfflineExercises } from '@/hooks/use-exercises';
 import { useWorkoutStore } from '@/stores/workout-store';
 import { useUserStore } from '@/stores/user-store';
 import { useTheme } from '@/hooks/use-theme';
@@ -46,126 +47,154 @@ export default function AddExercisesScreen() {
   // Store hooks
   const exerciseStore = useExerciseStore();
   const workoutStore = useWorkoutStore();
-  const { weightUnit } = useUserStore();
+  const { weightUnit, isSignedIn } = useUserStore();
 
   // Local state
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [dropdown, setDropdown] = useState<DropdownState>({
     muscle: 'All',
     equipment: 'All', 
     showMuscleDropdown: false,
     showEquipmentDropdown: false,
   });
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Initialize exercise database on mount
+  // React Query hooks for exercise data
+  const exerciseFilters = {
+    search: debouncedSearchTerm || undefined,
+    body_part: dropdown.muscle !== 'All' ? [dropdown.muscle] : undefined,
+    equipment: dropdown.equipment !== 'All' ? [dropdown.equipment] : undefined,
+    limit: 1000, // Load large batch for better UX
+  };
+
+  // Use offline-first approach with server sync
+  const {
+    exercises: serverExercises,
+    isLoading: serverLoading,
+    isOffline,
+    error: serverError
+  } = useOfflineExercises();
+
+  // Load body parts and equipment for dropdowns
+  const { data: bodyParts, isLoading: bodyPartsLoading } = useExerciseBodyParts();
+  const { data: equipmentTypes, isLoading: equipmentLoading } = useExerciseEquipment();
+
+  // Debounce search term
   useEffect(() => {
-    console.log('Initializing exercises in add-exercises screen');
-    const initializeExercises = async () => {
-      try {
-        setIsLoading(true);
-        
-        // Check if exercises are already loaded to prevent re-initialization
-        if (exerciseStore.exercises.length > 0) {
-          console.log('Exercises already loaded, skipping initialization');
-          setIsLoading(false);
-          return;
-        }
-        
-        // Add timeout to prevent hanging
-        const loadPromise = exerciseStore.loadExercises();
-        const timeoutPromise = new Promise((_, reject) => {
-          setTimeout(() => reject(new Error('Exercise loading timeout')), 5000);
-        });
-        
-        await Promise.race([loadPromise, timeoutPromise]);
-        console.log('Exercises loaded successfully, count:', exerciseStore.exercises.length);
-      } catch (error) {
-        console.error('Failed to load exercises:', error);
-        
-        // If timeout or error, just use default exercises - they should already be loaded
-        // from the store initialization
-      } finally {
-        console.log('Exercise loading completed');
-        setIsLoading(false);
-      }
-    };
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300);
 
-    initializeExercises();
-  }, []);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
-  // Sync local dropdown state with store filters
+  // Initialize loading state
   useEffect(() => {
-    const { muscle, equipment } = exerciseStore.filters;
-    setDropdown(prev => ({
-      ...prev,
-      muscle: muscle.length === 0 ? 'All' : muscle[0],
-      equipment: equipment.length === 0 ? 'All' : equipment[0],
-    }));
-  }, [exerciseStore.filters.muscle, exerciseStore.filters.equipment]);
+    setIsLoading(serverLoading || bodyPartsLoading || equipmentLoading);
+  }, [serverLoading, bodyPartsLoading, equipmentLoading]);
 
-  // Get filtered exercises based on current filters and search term
+  // Convert server exercises to local format and sync selection state
+  const exercises = useMemo(() => {
+    if (!serverExercises || serverExercises.length === 0) {
+      return exerciseStore.exercises; // Fallback to local store
+    }
+
+    // Convert server format to local format while preserving selection state
+    return serverExercises.map((exercise, index) => {
+      const existingExercise = exerciseStore.exercises.find(ex => 
+        ex.name.toLowerCase() === exercise.name.toLowerCase()
+      );
+      
+      return {
+        id: parseInt(exercise.id, 10) || index,
+        name: exercise.name,
+        muscle: Array.isArray(exercise.body_part) ? exercise.body_part[0] : exercise.body_part,
+        equipment: Array.isArray(exercise.equipment) ? exercise.equipment[0] : exercise.equipment,
+        selected: existingExercise?.selected || false,
+      };
+    });
+  }, [serverExercises, exerciseStore.exercises]);
+
+  // Client-side filtering for immediate feedback
   const filteredExercises = useMemo(() => {
-    const filtered = exerciseStore.getFilteredExercises();
-    return filtered;
-  }, [
-    exerciseStore.exercises, 
-    exerciseStore.filters.searchTerm, 
-    exerciseStore.filters.muscle, 
-    exerciseStore.filters.equipment,
-    searchTerm // Add local search term to dependencies
-  ]);
+    let filtered = exercises;
 
-  // Get dropdown options
+    // Apply search filter
+    if (searchTerm) {
+      filtered = filtered.filter(exercise =>
+        exercise.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        exercise.muscle.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        exercise.equipment.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Apply muscle filter
+    if (dropdown.muscle !== 'All') {
+      filtered = filtered.filter(exercise => 
+        exercise.muscle === dropdown.muscle
+      );
+    }
+
+    // Apply equipment filter
+    if (dropdown.equipment !== 'All') {
+      filtered = filtered.filter(exercise => 
+        exercise.equipment === dropdown.equipment
+      );
+    }
+
+    return filtered;
+  }, [exercises, searchTerm, dropdown.muscle, dropdown.equipment]);
+
+  // Get dropdown options from server data with local fallback
   const muscleOptions = useMemo((): DropdownOption[] => {
-    const muscleGroups = exerciseStore.getMuscleGroups();
+    let muscleGroups: string[] = [];
+    
+    if (bodyParts && bodyParts.length > 0) {
+      // Use server data
+      muscleGroups = bodyParts.map(bp => bp.name);
+    } else {
+      // Fallback to local data
+      const uniqueMuscles = Array.from(new Set(exercises.map(ex => ex.muscle))).sort();
+      muscleGroups = uniqueMuscles;
+    }
+    
     return [{ label: 'All', value: 'All' }, ...muscleGroups.map(muscle => ({
       label: muscle,
       value: muscle,
     }))];
-  }, [exerciseStore.exercises]);
+  }, [bodyParts, exercises]);
 
   const equipmentOptions = useMemo((): DropdownOption[] => {
-    const equipmentTypes = exerciseStore.getEquipmentTypes();
-    return [{ label: 'All', value: 'All' }, ...equipmentTypes.map(equipment => ({
+    let equipmentList: string[] = [];
+    
+    if (equipmentTypes && equipmentTypes.length > 0) {
+      // Use server data
+      equipmentList = equipmentTypes.map(eq => eq.name);
+    } else {
+      // Fallback to local data
+      const uniqueEquipment = Array.from(new Set(exercises.map(ex => ex.equipment))).sort();
+      equipmentList = uniqueEquipment;
+    }
+    
+    return [{ label: 'All', value: 'All' }, ...equipmentList.map(equipment => ({
       label: equipment,
       value: equipment,
     }))];
-  }, [exerciseStore.exercises]);
+  }, [equipmentTypes, exercises]);
 
   // Get exercise count information
-  const exerciseCount = exerciseStore.getExerciseCount();
-  const selectedCount = exerciseStore.selectedExercises.length;
+  const exerciseCount = exercises.length;
+  const selectedCount = exercises.filter(ex => ex.selected).length;
 
-  // Debounced search function
-  const [searchDebounceTimeout, setSearchDebounceTimeout] = useState<NodeJS.Timeout | null>(null);
-  
-  const debouncedSearch = useCallback((searchText: string) => {
-    if (searchDebounceTimeout) {
-      clearTimeout(searchDebounceTimeout);
-    }
-    
-    const timeout = setTimeout(() => {
-      exerciseStore.searchExercises(searchText);
-    }, 300); // 300ms debounce
-    
-    setSearchDebounceTimeout(timeout);
-  }, [exerciseStore, searchDebounceTimeout]);
+  // Direct search - no need for additional debouncing since we have debouncedSearchTerm
+  const handleSearchChange = useCallback((text: string) => {
+    setSearchTerm(text);
+    // The useEffect above handles debouncing for server requests
+  }, []);
 
   // Handle search input
-  const handleSearch = (text: string) => {
-    setSearchTerm(text);
-    debouncedSearch(text);
-  };
-
-  // Cleanup debounce on unmount
-  useEffect(() => {
-    return () => {
-      if (searchDebounceTimeout) {
-        clearTimeout(searchDebounceTimeout);
-      }
-    };
-  }, [searchDebounceTimeout]);
+  const handleSearch = handleSearchChange;
 
   // Handle muscle dropdown selection
   const handleMuscleSelect = (muscle: string) => {
@@ -177,9 +206,7 @@ export default function AddExercisesScreen() {
       showMuscleDropdown: false,
     }));
     
-    // Update store with single selection
-    const filters = muscle === 'All' ? [] : [muscle];
-    exerciseStore.filterByMuscle(filters);
+    // Filtering is now handled by filteredExercises memo
   };
 
   // Handle equipment dropdown selection
@@ -192,35 +219,44 @@ export default function AddExercisesScreen() {
       showEquipmentDropdown: false,
     }));
     
-    // Update store with single selection
-    const filters = equipment === 'All' ? [] : [equipment];
-    exerciseStore.filterByEquipment(filters);
+    // Filtering is now handled by filteredExercises memo
   };
 
   // Handle exercise selection toggle
-  const handleExerciseToggle = (exerciseId: number) => {
+  const handleExerciseToggle = useCallback((exerciseId: number) => {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       exerciseStore.toggleExerciseSelection(exerciseId);
+      
+      // Force re-render by updating exercises array
+      const updatedExercises = exercises.map(ex => 
+        ex.id === exerciseId ? { ...ex, selected: !ex.selected } : ex
+      );
+      // Note: This will be handled by the store, but we ensure UI updates immediately
     } catch (error) {
       console.error('Error toggling exercise selection:', error);
       Alert.alert('Error', 'Failed to select exercise. Please try again.');
     }
-  };
+  }, [exercises, exerciseStore]);
 
   // Handle select all exercises
-  const handleSelectAll = () => {
+  const handleSelectAll = useCallback(() => {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      exerciseStore.selectAllExercises();
+      // Select all filtered exercises
+      filteredExercises.forEach(exercise => {
+        if (!exercise.selected) {
+          exerciseStore.toggleExerciseSelection(exercise.id);
+        }
+      });
     } catch (error) {
       console.error('Error selecting all exercises:', error);
       Alert.alert('Error', 'Failed to select all exercises.');
     }
-  };
+  }, [filteredExercises, exerciseStore]);
 
   // Handle clear all selections
-  const handleClearSelection = () => {
+  const handleClearSelection = useCallback(() => {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       exerciseStore.clearSelection();
@@ -228,14 +264,14 @@ export default function AddExercisesScreen() {
       console.error('Error clearing selection:', error);
       Alert.alert('Error', 'Failed to clear selection.');
     }
-  };
+  }, [exerciseStore]);
 
   // Handle adding selected exercises to workout
-  const handleAddExercises = () => {
+  const handleAddExercises = useCallback(() => {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
       
-      const selectedExercises = exerciseStore.getSelectedExercises();
+      const selectedExercises = exercises.filter(ex => ex.selected);
       
       if (selectedExercises.length === 0) {
         Alert.alert('No Exercises Selected', 'Please select at least one exercise to add to your workout.');
@@ -271,7 +307,7 @@ export default function AddExercisesScreen() {
       console.error('Error adding exercises:', error);
       Alert.alert('Error', 'Failed to add exercises to workout. Please try again.');
     }
-  };
+  }, [exercises, workoutStore, exerciseStore]);
 
   // Handle close/back navigation
   const handleClose = () => {
@@ -318,9 +354,10 @@ export default function AddExercisesScreen() {
   };
 
   // Handle clear all filters
-  const handleClearFilters = () => {
+  const handleClearFilters = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setSearchTerm('');
+    setDebouncedSearchTerm('');
     setDropdown(prev => ({
       ...prev,
       muscle: 'All',
@@ -328,8 +365,7 @@ export default function AddExercisesScreen() {
       showMuscleDropdown: false,
       showEquipmentDropdown: false,
     }));
-    exerciseStore.clearFilters();
-  };
+  }, []);
 
   // Toggle dropdown visibility
   const toggleMuscleDropdown = () => {
@@ -486,21 +522,27 @@ export default function AddExercisesScreen() {
       <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
         <View className="flex-1 items-center justify-center px-6">
           <ActivityIndicator size="large" color={theme.colors.primary} />
-          <Text className="text-muted.foreground mt-4 text-center">Loading exercise database...</Text>
-          <Text className="text-muted.foreground text-sm text-center mt-2">Please wait a moment</Text>
+          <Text className="text-muted.foreground mt-4 text-center">
+            {isOffline ? 'Loading from local database...' : 'Loading exercise database...'}
+          </Text>
+          <Text className="text-muted.foreground text-sm text-center mt-2">
+            {isOffline ? 'Working offline' : 'Please wait a moment'}
+          </Text>
         </View>
       </View>
     );
   }
 
   // Show error state if no exercises loaded
-  if (!isLoading && exerciseStore.exercises.length === 0) {
+  if (!isLoading && exercises.length === 0) {
     return (
       <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
         <View className="flex-1 items-center justify-center px-6">
           <Ionicons name="warning" size={48} color={theme.colors.muted.foreground} />
           <Text className="text-foreground text-lg font-semibold mt-4 text-center">No Exercises Available</Text>
-          <Text className="text-muted.foreground text-center mt-2">Unable to load the exercise database.</Text>
+          <Text className="text-muted.foreground text-center mt-2">
+            {isOffline ? 'Unable to load exercises offline.' : 'Unable to load the exercise database.'}
+          </Text>
           <TouchableOpacity
             onPress={() => router.back()}
             className="bg-primary px-6 py-3 rounded-xl mt-6"
@@ -646,9 +688,12 @@ export default function AddExercisesScreen() {
         <View className="flex-row items-center justify-between">
           <Text className="text-muted.foreground text-sm">
             {searchTerm || dropdown.muscle !== 'All' || dropdown.equipment !== 'All' ? (
-              `Showing ${filteredExercises.length} of ${exerciseStore.exercises.length} exercises`
+              `Showing ${filteredExercises.length} of ${exercises.length} exercises`
             ) : (
-              `${exerciseStore.exercises.length} exercises`
+              `${exercises.length} exercises`
+            )}
+            {isOffline && (
+              <Text className="text-yellow-600 text-xs mt-1">• Working offline</Text>
             )}
           </Text>
           
@@ -736,13 +781,17 @@ export default function AddExercisesScreen() {
       )}
 
       {/* Error Display */}
-      {exerciseStore.error && (
+      {(exerciseStore.error || serverError) && (
         <View className="absolute top-20 left-4 right-4 bg-destructive p-3 rounded-lg">
           <Text className="text-destructive-foreground text-center">
-            {exerciseStore.error}
+            {serverError?.message || exerciseStore.error || 'An error occurred'}
           </Text>
           <TouchableOpacity
-            onPress={() => exerciseStore.clearError()}
+            onPress={() => {
+              if (exerciseStore.error) {
+                exerciseStore.clearError();
+              }
+            }}
             className="absolute top-1 right-3"
           >
             <Ionicons name="close" size={16} color={theme.colors.background} />

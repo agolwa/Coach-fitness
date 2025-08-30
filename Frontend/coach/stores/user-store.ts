@@ -16,6 +16,7 @@ import {
   STORAGE_KEYS,
   DEFAULT_USER_PREFERENCES,
 } from '../types/workout';
+import { apiClient, TokenManager, type UserResponse } from '../services/api-client';
 
 // Constants
 const USER_STORAGE_KEY = STORAGE_KEYS.USER_PREFERENCES;
@@ -402,6 +403,245 @@ export const useUserStore = create<UserStore>()(
       } catch (error) {
         console.error('Failed to persist user preferences:', error);
         set({ error: 'Failed to save preferences' });
+      }
+    },
+
+    // ============================================================================
+    // Server Sync Methods (Phase 5.6)
+    // ============================================================================
+
+    /**
+     * Sync local preferences with server
+     * Updates server with current local preferences
+     */
+    syncPreferencesToServer: async () => {
+      const state = get();
+      
+      if (!state.isSignedIn) {
+        console.log('Not signed in, skipping server sync');
+        return;
+      }
+
+      try {
+        set({ isLoading: true, error: null });
+
+        const serverPreferences = {
+          weightUnit: state.weightUnit,
+          theme: 'auto' as const, // Default theme
+          defaultRestTimer: 60, // Default rest timer
+          hapticFeedback: true, // Default haptic feedback
+          soundEnabled: true, // Default sound
+          autoStartRestTimer: false, // Default auto-start
+        };
+
+        const response = await apiClient.put<UserResponse>('/users/profile', {
+          preferences: serverPreferences,
+        });
+
+        set({ 
+          isLoading: false,
+          lastUpdated: new Date(),
+        });
+
+        console.log('Preferences synced to server successfully');
+        return response;
+      } catch (error) {
+        console.error('Failed to sync preferences to server:', error);
+        set({ 
+          isLoading: false, 
+          error: 'Failed to sync preferences to server' 
+        });
+        return null;
+      }
+    },
+
+    /**
+     * Fetch user profile from server and sync local preferences
+     * Updates local state with server data
+     */
+    syncPreferencesFromServer: async () => {
+      const state = get();
+      
+      if (!state.isSignedIn) {
+        console.log('Not signed in, skipping server sync');
+        return;
+      }
+
+      try {
+        set({ isLoading: true, error: null });
+
+        const userProfile = await apiClient.get<UserResponse>('/auth/me');
+
+        // Update local preferences with server data
+        const newPreferences = {
+          weightUnit: userProfile.preferences.weightUnit,
+          lastUpdated: new Date(),
+        };
+
+        set({ ...newPreferences, isLoading: false });
+
+        // Persist to local storage
+        const fullState = { ...state, ...newPreferences };
+        delete (fullState as any).isLoading;
+        delete (fullState as any).error;
+        delete (fullState as any).lastUpdated;
+        
+        debouncedPersist(fullState as UserPreferences);
+
+        console.log('Preferences synced from server successfully');
+        return userProfile;
+      } catch (error) {
+        console.error('Failed to sync preferences from server:', error);
+        set({ 
+          isLoading: false, 
+          error: 'Failed to sync preferences from server' 
+        });
+        
+        // If authentication error, sign out user
+        if (error instanceof Error && error.message.includes('401')) {
+          get().signOut();
+          await TokenManager.clearTokens();
+        }
+        
+        return null;
+      }
+    },
+
+    /**
+     * Authenticate with server and sync profile
+     * Called after successful authentication
+     */
+    authenticateWithServer: async (tokens: { 
+      access_token: string; 
+      token_type: string; 
+      expires_in: number; 
+      refresh_token?: string; 
+    }) => {
+      try {
+        set({ isLoading: true, error: null });
+
+        // Store tokens
+        await TokenManager.setTokens(tokens);
+
+        // Fetch user profile to get server preferences
+        const userProfile = await get().syncPreferencesFromServer();
+
+        if (userProfile) {
+          // Update authentication state
+          get().signIn();
+          
+          set({ isLoading: false });
+          return userProfile;
+        } else {
+          throw new Error('Failed to fetch user profile');
+        }
+      } catch (error) {
+        console.error('Server authentication failed:', error);
+        set({ 
+          isLoading: false, 
+          error: 'Failed to authenticate with server' 
+        });
+        
+        // Clear tokens and sign out on failure
+        await TokenManager.clearTokens();
+        get().signOut();
+        
+        return null;
+      }
+    },
+
+    /**
+     * Sign out from server and clear all data
+     * Comprehensive logout including server-side cleanup
+     */
+    signOutFromServer: async () => {
+      try {
+        set({ isLoading: true, error: null });
+
+        // Optional: Call server logout endpoint
+        try {
+          await apiClient.post('/auth/logout');
+        } catch (error) {
+          console.log('Server logout endpoint not available or failed');
+        }
+
+        // Clear tokens
+        await TokenManager.clearTokens();
+
+        // Update local state
+        get().signOut();
+
+        set({ isLoading: false });
+        console.log('Signed out from server successfully');
+      } catch (error) {
+        console.error('Failed to sign out from server:', error);
+        
+        // Still perform local cleanup even if server call fails
+        await TokenManager.clearTokens();
+        get().signOut();
+        
+        set({ 
+          isLoading: false, 
+          error: 'Signed out locally, server logout may have failed' 
+        });
+      }
+    },
+
+    /**
+     * Check server authentication status and sync if valid
+     * Used for app initialization and session recovery
+     */
+    validateServerSession: async () => {
+      try {
+        const accessToken = await TokenManager.getAccessToken();
+        
+        if (!accessToken) {
+          console.log('No access token found, user not authenticated');
+          return false;
+        }
+
+        const isExpired = await TokenManager.isTokenExpired();
+        
+        if (isExpired) {
+          // Try to refresh token
+          const refreshToken = await TokenManager.getRefreshToken();
+          
+          if (refreshToken) {
+            try {
+              const response = await apiClient.post('/auth/refresh', {
+                refresh_token: refreshToken,
+              });
+              
+              await TokenManager.setTokens(response);
+              console.log('Token refreshed successfully');
+            } catch (error) {
+              console.log('Token refresh failed');
+              await TokenManager.clearTokens();
+              get().signOut();
+              return false;
+            }
+          } else {
+            console.log('No refresh token available');
+            await TokenManager.clearTokens();
+            get().signOut();
+            return false;
+          }
+        }
+
+        // Validate session with server
+        const userProfile = await get().syncPreferencesFromServer();
+        
+        if (userProfile) {
+          console.log('Server session validated successfully');
+          return true;
+        } else {
+          return false;
+        }
+      } catch (error) {
+        console.error('Session validation failed:', error);
+        await TokenManager.clearTokens();
+        get().signOut();
+        return false;
       }
     },
   }))

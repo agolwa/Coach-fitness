@@ -25,11 +25,21 @@ import { useUserStore } from '@/stores/user-store';
 import { useTheme } from '@/hooks/use-theme';
 import { router } from 'expo-router';
 import { WORKOUT_CONSTANTS } from '@/types/workout';
+import { 
+  useActiveWorkout,
+  useCreateWorkout,
+  useUpdateWorkout,
+  type CreateWorkoutRequest,
+  type UpdateWorkoutRequest
+} from '@/hooks/use-workouts';
+import type { APIError } from '@/services/api-client';
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
-  const { authState } = useUserStore();
+  const { authState, isSignedIn } = useUserStore();
+  
+  // Local Zustand store for offline functionality
   const {
     exercises,
     title,
@@ -41,31 +51,47 @@ export default function HomeScreen() {
     canEndWorkout,
   } = useWorkoutStore();
 
+  // React Query hooks for server integration
+  const { data: activeWorkout, error: activeWorkoutError } = useActiveWorkout();
+  const createWorkoutMutation = useCreateWorkout();
+  const updateWorkoutMutation = useUpdateWorkout();
+
   // Local state for workout title input
   const [workoutTitle, setWorkoutTitle] = useState(title || '');
   const [showCharacterCounter, setShowCharacterCounter] = useState(false);
   const [showEndWorkoutDialog, setShowEndWorkoutDialog] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
+  const [isCreatingWorkout, setIsCreatingWorkout] = useState(false);
+  const [isEndingWorkout, setIsEndingWorkout] = useState(false);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const celebrationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const titleUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Constants
   const MAX_TITLE_LENGTH = 30;
   const COUNTER_THRESHOLD = Math.ceil(MAX_TITLE_LENGTH * 0.8); // 24 characters
 
-  // Update local title when store title changes
+  // Sync workout title with server data when available
   useEffect(() => {
-    if (title !== workoutTitle) {
+    if (isSignedIn && activeWorkout) {
+      const serverTitle = activeWorkout.title || '';
+      if (serverTitle !== title) {
+        // Server has different title, sync it locally
+        updateWorkoutTitle(serverTitle);
+        setWorkoutTitle(serverTitle);
+      }
+    } else if (title !== workoutTitle) {
+      // Fallback to local store title
       setWorkoutTitle(title || '');
     }
-  }, [title]);
+  }, [title, activeWorkout, isSignedIn]);
 
-  // Handle workout title changes
+  // Handle workout title changes with server sync
   const handleWorkoutTitleChange = (text: string) => {
     // Enforce character limit
     if (text.length <= MAX_TITLE_LENGTH) {
       setWorkoutTitle(text);
-      updateWorkoutTitle(text);
+      updateWorkoutTitle(text); // Update local store immediately
 
       // Show character counter if at 80% of limit (24 chars)
       if (text.length >= COUNTER_THRESHOLD) {
@@ -87,14 +113,62 @@ export default function HomeScreen() {
           clearTimeout(typingTimeoutRef.current);
         }
       }
+
+      // Debounced server update for signed-in users
+      if (isSignedIn && activeWorkout?.id) {
+        // Clear existing timeout
+        if (titleUpdateTimeoutRef.current) {
+          clearTimeout(titleUpdateTimeoutRef.current);
+        }
+
+        // Debounce server update by 1 second
+        titleUpdateTimeoutRef.current = setTimeout(() => {
+          updateWorkoutMutation.mutate({
+            workoutId: activeWorkout.id,
+            updates: { title: text } as UpdateWorkoutRequest
+          }, {
+            onError: (error: APIError) => {
+              console.error('Failed to update workout title on server:', error);
+              // Title stays updated locally, will sync later
+            }
+          });
+        }, 1000) as any;
+      }
     }
   };
 
-  // Handle add exercises navigation
-  const handleAddExercises = () => {
+  // Handle add exercises navigation with workout creation
+  const handleAddExercises = async () => {
     console.log('Add exercises button pressed');
-    console.log('Navigation to add-exercises triggered');
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    
+    // For signed-in users, create server workout if none exists
+    if (isSignedIn && !activeWorkout && !isActive) {
+      setIsCreatingWorkout(true);
+      
+      try {
+        const workoutData: CreateWorkoutRequest = {
+          title: workoutTitle || 'New Workout',
+          started_at: new Date().toISOString()
+        };
+        
+        await createWorkoutMutation.mutateAsync(workoutData);
+        console.log('Server workout created successfully');
+        
+      } catch (error) {
+        console.error('Failed to create server workout:', error);
+        // Continue with local workout creation
+        Alert.alert(
+          'Offline Mode',
+          'Working offline. Your workout will sync when connection is restored.',
+          [{ text: 'Continue' }]
+        );
+      } finally {
+        setIsCreatingWorkout(false);
+      }
+    }
+    
+    console.log('Navigation to add-exercises triggered');
     router.push('/(modal)/add-exercises');
   };
 
@@ -138,9 +212,10 @@ export default function HomeScreen() {
     setShowEndWorkoutDialog(true);
   };
 
-  // Confirm end workout
+  // Confirm end workout with server sync
   const handleConfirmEndWorkout = async () => {
     setShowEndWorkoutDialog(false);
+    setIsEndingWorkout(true);
     
     if (authState === 'guest') {
       Alert.alert(
@@ -153,12 +228,14 @@ export default function HomeScreen() {
             onPress: () => {
               endWorkout(); // Just clear workout for guests
               setWorkoutTitle('');
+              setIsEndingWorkout(false);
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             },
           },
           {
             text: 'Sign Up',
             onPress: () => {
+              setIsEndingWorkout(false);
               router.push('/(auth)/signup');
             },
           },
@@ -167,7 +244,20 @@ export default function HomeScreen() {
     } else {
       // Save workout for signed-in users
       try {
-        await saveWorkout(); // Actually save the workout to history
+        // If we have a server workout, complete it
+        if (activeWorkout?.id) {
+          await updateWorkoutMutation.mutateAsync({
+            workoutId: activeWorkout.id,
+            updates: {
+              is_active: false,
+              completed_at: new Date().toISOString()
+            } as UpdateWorkoutRequest
+          });
+          console.log('Server workout completed successfully');
+        }
+        
+        // Always save to local history
+        await saveWorkout();
         setWorkoutTitle('');
         
         // Show celebration after successful save
@@ -179,16 +269,41 @@ export default function HomeScreen() {
           setShowCelebration(false);
           // Additional success haptic after celebration
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        }, WORKOUT_CONSTANTS.CELEBRATION_DURATION);
+        }, WORKOUT_CONSTANTS.CELEBRATION_DURATION) as any;
         
       } catch (error) {
-        // Handle save error
-        Alert.alert(
-          'Error Saving Workout',
-          'There was an issue saving your workout. Please try again.',
-          [{ text: 'OK' }]
-        );
-        console.error('Failed to save workout:', error);
+        // Handle save error - still save locally
+        console.error('Failed to save workout to server:', error);
+        
+        try {
+          await saveWorkout(); // Save locally as backup
+          setWorkoutTitle('');
+          
+          Alert.alert(
+            'Saved Locally',
+            'Workout saved offline. It will sync when connection is restored.',
+            [{ text: 'OK' }]
+          );
+          
+          // Show celebration for local save
+          setShowCelebration(true);
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          
+          celebrationTimeoutRef.current = setTimeout(() => {
+            setShowCelebration(false);
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          }, WORKOUT_CONSTANTS.CELEBRATION_DURATION) as any;
+          
+        } catch (localError) {
+          Alert.alert(
+            'Error Saving Workout',
+            'There was an issue saving your workout. Please try again.',
+            [{ text: 'OK' }]
+          );
+          console.error('Failed to save workout locally:', localError);
+        }
+      } finally {
+        setIsEndingWorkout(false);
       }
     }
   };
@@ -202,11 +317,26 @@ export default function HomeScreen() {
       if (celebrationTimeoutRef.current) {
         clearTimeout(celebrationTimeoutRef.current);
       }
+      if (titleUpdateTimeoutRef.current) {
+        clearTimeout(titleUpdateTimeoutRef.current);
+      }
     };
   }, []);
 
+  // Handle server errors gracefully
+  useEffect(() => {
+    if (activeWorkoutError) {
+      console.warn('Active workout fetch error:', activeWorkoutError);
+      // Continue with local state, no user notification needed
+    }
+  }, [activeWorkoutError]);
+
   const hasExercises = exercises && exercises.length > 0;
   const hasValidSets = canEndWorkout();
+  
+  // Determine loading states
+  const isLoadingWorkout = isCreatingWorkout || createWorkoutMutation.isPending;
+  const isCompletingWorkout = isEndingWorkout || updateWorkoutMutation.isPending;
 
   return (
     <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
@@ -267,22 +397,48 @@ export default function HomeScreen() {
           <View className="flex-row gap-3">
             <TouchableOpacity
               onPress={handleAddExercises}
-              className="flex-1 bg-primary flex-row items-center justify-center py-3 px-4 rounded-lg"
+              className={`flex-1 bg-primary flex-row items-center justify-center py-3 px-4 rounded-lg ${
+                isLoadingWorkout ? 'opacity-70' : ''
+              }`}
+              disabled={isLoadingWorkout}
             >
-              <Ionicons name="add" size={20} color={theme.colors.primary.foreground} />
-              <Text className="text-primary-foreground font-medium ml-2">
-                Add Exercise
-              </Text>
+              {isLoadingWorkout ? (
+                <>
+                  <View className="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin mr-2" />
+                  <Text className="text-primary-foreground font-medium">
+                    Creating...
+                  </Text>
+                </>
+              ) : (
+                <>
+                  <Ionicons name="add" size={20} color={theme.colors.primary.foreground} />
+                  <Text className="text-primary-foreground font-medium ml-2">
+                    Add Exercise
+                  </Text>
+                </>
+              )}
             </TouchableOpacity>
 
             {hasValidSets && (
               <TouchableOpacity
                 onPress={handleEndWorkout}
-                className="bg-secondary flex-row items-center justify-center py-3 px-4 rounded-lg"
+                className={`bg-secondary flex-row items-center justify-center py-3 px-4 rounded-lg ${
+                  isCompletingWorkout ? 'opacity-70' : ''
+                }`}
+                disabled={isCompletingWorkout}
               >
-                <Text className="text-secondary-foreground font-medium">
-                  End Workout
-                </Text>
+                {isCompletingWorkout ? (
+                  <>
+                    <View className="w-4 h-4 border-2 border-secondary-foreground/30 border-t-secondary-foreground rounded-full animate-spin mr-2" />
+                    <Text className="text-secondary-foreground font-medium">
+                      Saving...
+                    </Text>
+                  </>
+                ) : (
+                  <Text className="text-secondary-foreground font-medium">
+                    End Workout
+                  </Text>
+                )}
               </TouchableOpacity>
             )}
           </View>

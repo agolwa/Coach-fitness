@@ -1,3 +1,14 @@
+/**
+ * SignupScreen - Real Backend Authentication Integration
+ * 
+ * Integrates with backend API for Google OAuth authentication:
+ * - Uses real Google OAuth flow via expo-auth-session
+ * - Authenticates with backend using Google tokens
+ * - Handles JWT token storage and management automatically
+ * - Provides comprehensive error handling for network/server issues
+ * - Maintains existing UI patterns and user experience flows
+ */
+
 import React, { useState } from 'react';
 import { 
   View, 
@@ -14,6 +25,8 @@ import * as WebBrowser from 'expo-web-browser';
 import * as Google from 'expo-auth-session/providers/google';
 import { useUserStore } from '@/stores/user-store';
 import { useThemeColors } from '@/hooks/use-theme';
+import { useGoogleAuth } from '@/hooks/use-auth';
+import { APIError } from '@/services/api-client';
 import * as Haptics from 'expo-haptics';
 
 // Complete WebBrowser authentication
@@ -35,14 +48,17 @@ function GoogleIcon({ size = 20 }: GoogleIconProps) {
 
 export default function SignupScreen() {
   const insets = useSafeAreaInsets();
-  const { signIn, continueAsGuest } = useUserStore();
+  const { continueAsGuest } = useUserStore();
   const colors = useThemeColors();
   const [isSigningIn, setIsSigningIn] = useState(false);
+  
+  // React Query hook for Google authentication
+  const googleAuthMutation = useGoogleAuth();
 
   // Configure Google OAuth
   const [request, response, promptAsync] = Google.useAuthRequest({
-    // For testing, we'll use a mock client ID
-    // In production, this would be your actual Google OAuth client ID
+    // TODO: Replace with actual Google OAuth client ID from Google Cloud Console
+    // For development: Add your OAuth client ID here
     clientId: '123456789-abcdef.apps.googleusercontent.com',
     scopes: ['profile', 'email'],
   });
@@ -60,31 +76,58 @@ export default function SignupScreen() {
       );
       setIsSigningIn(false);
     } else if (response?.type === 'cancel') {
-      console.log('OAuth cancelled');
+      console.log('OAuth cancelled by user');
       setIsSigningIn(false);
     }
   }, [response]);
 
+  // Cleanup effect to handle component unmounting during auth
+  React.useEffect(() => {
+    return () => {
+      // Reset signing in state if component unmounts
+      setIsSigningIn(false);
+    };
+  }, []);
+
   const handleAuthenticationSuccess = async (authentication: any) => {
     try {
-      // In a real app, you would:
-      // 1. Use the authentication token to get user info from Google
-      // 2. Send this info to your backend to create/authenticate the user
-      // 3. Store the session token
+      console.log('Google authentication successful, contacting backend...');
       
-      console.log('Google authentication successful:', authentication);
+      // Extract tokens from Google authentication
+      const googleToken = authentication.accessToken;
+      const googleJWT = authentication.idToken;
       
-      // For now, just simulate successful sign-in
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+      if (!googleToken) {
+        throw new Error('No Google access token received');
+      }
       
-      signIn();
+      // Authenticate with backend using Google tokens
+      await googleAuthMutation.mutateAsync({
+        token: googleToken,
+        google_jwt: googleJWT || '', // JWT might not be available in all flows
+      });
+      
+      // Success handled by useGoogleAuth hook's onSuccess callback
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       router.replace('/(tabs)');
     } catch (error) {
-      console.error('Sign in error:', error);
+      console.error('Backend authentication error:', error);
+      
+      let errorMessage = 'Something went wrong. Please try again.';
+      
+      if (error instanceof APIError) {
+        if (error.isNetworkError()) {
+          errorMessage = 'Network error. Please check your connection and try again.';
+        } else if (error.isServerError()) {
+          errorMessage = 'Server error. Please try again later.';
+        } else if (error.status === 400) {
+          errorMessage = 'Invalid Google authentication. Please try signing in again.';
+        }
+      }
+      
       Alert.alert(
         'Sign In Failed',
-        'Something went wrong. Please try again.',
+        errorMessage,
         [{ text: 'OK' }]
       );
     } finally {
@@ -93,32 +136,38 @@ export default function SignupScreen() {
   };
 
   const handleGoogleSignup = async () => {
-    if (isSigningIn) return;
+    if (isSigningIn || googleAuthMutation.isPending) return;
     
     setIsSigningIn(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     
     try {
-      // Since this is frontend development, we'll simulate the OAuth flow
-      // In production, promptAsync() would trigger the actual Google OAuth flow
-      console.log('Google signup initiated');
+      console.log('Initiating Google OAuth flow...');
       
-      // For development purposes, simulate successful OAuth
-      setTimeout(() => {
-        signIn();
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        router.replace('/(tabs)');
-        setIsSigningIn(false);
-      }, 1500);
+      // Trigger real Google OAuth flow
+      await promptAsync();
       
-      // Uncomment this line when ready for real OAuth testing:
-      // await promptAsync();
+      // Authentication result will be handled by the useEffect hook above
+      // which calls handleAuthenticationSuccess on success
       
     } catch (error) {
       console.error('OAuth prompt error:', error);
+      
+      let errorMessage = 'Unable to start sign in process. Please try again.';
+      
+      if (error instanceof Error) {
+        if (error.message.includes('network')) {
+          errorMessage = 'Network error. Please check your connection and try again.';
+        } else if (error.message.includes('cancelled')) {
+          // User cancelled, just reset state without showing error
+          setIsSigningIn(false);
+          return;
+        }
+      }
+      
       Alert.alert(
         'Sign In Error',
-        'Unable to start sign in process. Please try again.',
+        errorMessage,
         [{ text: 'OK' }]
       );
       setIsSigningIn(false);
@@ -258,7 +307,7 @@ export default function SignupScreen() {
           }}>
             <TouchableOpacity
               onPress={handleGoogleSignup}
-              disabled={isSigningIn}
+              disabled={isSigningIn || googleAuthMutation.isPending}
               style={{
                 width: '100%',
                 backgroundColor: colors.card.DEFAULT,
@@ -271,11 +320,11 @@ export default function SignupScreen() {
                 alignItems: 'center',
                 justifyContent: 'center',
                 marginBottom: 12,
-                opacity: isSigningIn ? 0.6 : 1
+                opacity: (isSigningIn || googleAuthMutation.isPending) ? 0.6 : 1
               }}
               activeOpacity={0.8}
             >
-              {isSigningIn ? (
+              {(isSigningIn || googleAuthMutation.isPending) ? (
                 <ActivityIndicator 
                   size="small" 
                   color={colors.foreground} 
@@ -290,13 +339,19 @@ export default function SignupScreen() {
                 fontSize: 16,
                 marginLeft: 12
               }}>
-                {isSigningIn ? 'Signing in...' : 'Continue with Google'}
+                {googleAuthMutation.isPending 
+                  ? 'Authenticating...' 
+                  : isSigningIn 
+                    ? 'Signing in...' 
+                    : 'Continue with Google'
+                }
               </Text>
             </TouchableOpacity>
 
             {/* Try without signup button */}
             <TouchableOpacity
               onPress={handleTryWithoutSignup}
+              disabled={isSigningIn || googleAuthMutation.isPending}
               style={{
                 width: '100%',
                 backgroundColor: 'transparent',
@@ -307,7 +362,8 @@ export default function SignupScreen() {
                 paddingVertical: 16,
                 flexDirection: 'row',
                 alignItems: 'center',
-                justifyContent: 'center'
+                justifyContent: 'center',
+                opacity: (isSigningIn || googleAuthMutation.isPending) ? 0.6 : 1
               }}
               activeOpacity={0.8}
             >

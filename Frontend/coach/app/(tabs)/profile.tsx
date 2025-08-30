@@ -12,6 +12,7 @@ import {
   Switch,
   Alert,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -20,9 +21,15 @@ import { Ionicons } from '@expo/vector-icons';
 // Stores and hooks
 import { useUserStore } from '@/stores/user-store';
 import { useTheme } from '@/hooks/use-theme';
+import { 
+  useUserProfile, 
+  useUpdateUserProfile, 
+  useLogout 
+} from '@/hooks/use-auth';
 
 // Types
 import type { WeightUnit } from '@/types/workout';
+import type { APIError } from '@/services/api-client';
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
@@ -37,8 +44,32 @@ export default function ProfileScreen() {
 
   const { colorScheme, toggleColorScheme } = useTheme();
 
+  // React Query hooks for server-synced data
+  const { 
+    data: userProfile, 
+    isLoading: profileLoading, 
+    error: profileError 
+  } = useUserProfile();
+  
+  const updateProfileMutation = useUpdateUserProfile();
+  const logoutMutation = useLogout();
+
   // Local state
   const [weekStartsOn, setWeekStartsOn] = useState<'sunday' | 'monday'>('monday');
+
+  // Helper functions
+  const getDisplayName = () => {
+    if (!isSignedIn) return 'Guest User';
+    if (profileLoading) return 'Loading...';
+    return userProfile?.display_name || userProfile?.email?.split('@')[0] || 'User';
+  };
+
+  const getDisplayEmail = () => {
+    if (!isSignedIn) return 'Sign up to save your workouts';
+    if (profileLoading) return 'Loading profile...';
+    if (profileError) return 'Failed to load profile data';
+    return userProfile?.email || 'No email available';
+  };
 
   // Alert handlers for destructive actions
   const handleDeleteAccount = () => {
@@ -54,9 +85,31 @@ export default function ProfileScreen() {
           text: 'Delete Account',
           style: 'destructive',
           onPress: () => {
-            // Handle account deletion logic here
-            console.log('Account deleted');
-            // Redirect to login or home
+            // Show a second confirmation dialog
+            Alert.alert(
+              'Final Warning',
+              'This will permanently delete your account and all data. Type "DELETE" to confirm.',
+              [
+                {
+                  text: 'Cancel',
+                  style: 'cancel',
+                },
+                {
+                  text: 'I Understand',
+                  style: 'destructive',
+                  onPress: () => {
+                    // TODO: Implement account deletion API call
+                    // For now, just sign out the user
+                    console.log('Account deletion requested - not implemented yet');
+                    Alert.alert(
+                      'Feature Not Available',
+                      'Account deletion is not yet implemented. Please contact support to delete your account.',
+                      [{ text: 'OK', style: 'default' }]
+                    );
+                  },
+                },
+              ]
+            );
           },
         },
       ]
@@ -76,7 +129,18 @@ export default function ProfileScreen() {
           text: 'Sign Out',
           style: 'default',
           onPress: () => {
-            signOut();
+            logoutMutation.mutate(undefined, {
+              onError: (error: APIError) => {
+                console.error('Logout failed:', error);
+                // Still perform local logout if server logout fails
+                signOut();
+                Alert.alert(
+                  'Sign Out',
+                  'Signed out locally. Server logout may have failed.',
+                  [{ text: 'OK', style: 'default' }]
+                );
+              },
+            });
           },
         },
       ]
@@ -85,20 +149,49 @@ export default function ProfileScreen() {
 
   const handleWeightUnitChange = (value: boolean) => {
     const newUnit: WeightUnit = value ? 'lbs' : 'kg';
-    if (canChangeWeightUnit) {
-      setWeightUnit(newUnit);
-    } else {
+    
+    if (!canChangeWeightUnit) {
       Alert.alert(
         'Cannot Update Units',
         'Cannot update units during a workout. Complete the workout and try again.',
         [{ text: 'OK', style: 'default' }]
       );
+      return;
+    }
+
+    // Update local state immediately for responsive UI
+    setWeightUnit(newUnit);
+
+    // If user is signed in, sync to server
+    if (isSignedIn) {
+      updateProfileMutation.mutate(
+        {
+          preferences: {
+            ...userProfile?.preferences,
+            weightUnit: newUnit,
+          },
+        },
+        {
+          onError: (error: APIError) => {
+            console.error('Failed to sync weight unit to server:', error);
+            // Revert local change on server sync failure
+            const revertedUnit: WeightUnit = value ? 'kg' : 'lbs';
+            setWeightUnit(revertedUnit);
+            
+            Alert.alert(
+              'Sync Failed',
+              'Failed to save preference to server. Your change has been reverted.',
+              [{ text: 'OK', style: 'default' }]
+            );
+          },
+        }
+      );
     }
   };
 
   const handleSignUp = () => {
-    // Navigate to sign up screen (will be implemented later)
-    console.log('Navigate to sign up');
+    // Navigate to authentication screen
+    router.push('/(auth)/sign-in');
   };
 
   const handleNavigation = (screen: string) => {
@@ -173,13 +266,24 @@ export default function ProfileScreen() {
               <View className="flex-1">
                 {isSignedIn ? (
                   <>
-                    <Text className="text-foreground text-lg font-semibold">John Doe</Text>
-                    <Text className="text-muted-foreground text-sm">john.doe@example.com</Text>
+                    <View className="flex-row items-center gap-2">
+                      <Text className="text-foreground text-lg font-semibold">
+                        {getDisplayName()}
+                      </Text>
+                      {profileLoading && (
+                        <ActivityIndicator size="small" color="#10b981" />
+                      )}
+                    </View>
+                    <Text className={`text-sm ${
+                      profileError ? 'text-destructive' : 'text-muted-foreground'
+                    }`}>
+                      {getDisplayEmail()}
+                    </Text>
                   </>
                 ) : (
                   <>
-                    <Text className="text-foreground text-lg font-semibold">Guest User</Text>
-                    <Text className="text-muted-foreground text-sm">Sign up to save your workouts</Text>
+                    <Text className="text-foreground text-lg font-semibold">{getDisplayName()}</Text>
+                    <Text className="text-muted-foreground text-sm">{getDisplayEmail()}</Text>
                   </>
                 )}
               </View>
@@ -210,16 +314,52 @@ export default function ProfileScreen() {
           {/* User Preferences Section - Available for all users */}
           <View className="mb-8">
             <View className="mb-4">
-              <Text className="text-foreground text-lg font-semibold">User Preferences</Text>
+              <View className="flex-row items-center justify-between">
+                <Text className="text-foreground text-lg font-semibold">User Preferences</Text>
+                {isSignedIn && (
+                  <View className="flex-row items-center gap-2">
+                    {profileLoading ? (
+                      <>
+                        <ActivityIndicator size="small" color="#10b981" />
+                        <Text className="text-muted-foreground text-xs">Loading...</Text>
+                      </>
+                    ) : profileError ? (
+                      <>
+                        <Ionicons name="alert-circle" size={16} color="#ef4444" />
+                        <Text className="text-destructive text-xs">Offline</Text>
+                      </>
+                    ) : (
+                      <>
+                        <View className="w-2 h-2 bg-green-500 rounded-full" />
+                        <Text className="text-green-600 text-xs">Synced</Text>
+                      </>
+                    )}
+                  </View>
+                )}
+              </View>
+              {profileError && isSignedIn && (
+                <Text className="text-muted-foreground text-sm mt-2">
+                  Using offline data. Changes will sync when connection is restored.
+                </Text>
+              )}
             </View>
 
             {/* Weight Unit Preference */}
             <View className="bg-card border border-border rounded-lg p-4 mb-4">
               <View className="flex-row items-center justify-between">
                 <View className="flex-1">
-                  <Text className="text-foreground font-semibold mb-1">Weight Unit</Text>
+                  <View className="flex-row items-center gap-2">
+                    <Text className="text-foreground font-semibold mb-1">Weight Unit</Text>
+                    {updateProfileMutation.isPending && (
+                      <ActivityIndicator size="small" color="#10b981" />
+                    )}
+                    {isSignedIn && !profileLoading && (
+                      <View className="w-2 h-2 bg-green-500 rounded-full" />
+                    )}
+                  </View>
                   <Text className="text-muted-foreground text-sm">
                     Choose your preferred weight measurement
+                    {isSignedIn && ' (synced to server)'}
                   </Text>
                 </View>
                 <View className="flex-row items-center gap-2">
@@ -229,6 +369,7 @@ export default function ProfileScreen() {
                   <Switch
                     value={weightUnit === 'lbs'}
                     onValueChange={handleWeightUnitChange}
+                    disabled={updateProfileMutation.isPending}
                     trackColor={{ false: '#e2e8f0', true: '#10b981' }}
                     thumbColor={Platform.OS === 'ios' ? '#ffffff' : weightUnit === 'lbs' ? '#ffffff' : '#f4f4f5'}
                   />
@@ -291,9 +432,15 @@ export default function ProfileScreen() {
             <View className="bg-card border border-border rounded-lg p-4">
               <View className="flex-row items-center justify-between">
                 <View className="flex-1">
-                  <Text className="text-foreground font-semibold mb-1">Theme</Text>
+                  <View className="flex-row items-center gap-2">
+                    <Text className="text-foreground font-semibold mb-1">Theme</Text>
+                    {isSignedIn && !profileLoading && (
+                      <View className="w-2 h-2 bg-green-500 rounded-full" />
+                    )}
+                  </View>
                   <Text className="text-muted-foreground text-sm">
                     Choose your preferred app appearance
+                    {isSignedIn && ' (synced to server)'}
                   </Text>
                 </View>
                 <View className="flex-row items-center gap-2">
@@ -304,7 +451,31 @@ export default function ProfileScreen() {
                   />
                   <Switch
                     value={colorScheme === 'dark'}
-                    onValueChange={toggleColorScheme}
+                    onValueChange={(value) => {
+                      // Update local theme immediately for responsive UI
+                      toggleColorScheme();
+                      
+                      // If user is signed in, sync theme preference to server
+                      if (isSignedIn) {
+                        const newTheme = value ? 'dark' : 'light';
+                        updateProfileMutation.mutate(
+                          {
+                            preferences: {
+                              ...userProfile?.preferences,
+                              theme: newTheme,
+                            },
+                          },
+                          {
+                            onError: (error: APIError) => {
+                              console.error('Failed to sync theme to server:', error);
+                              // Note: We don't revert theme changes as they're handled locally
+                              // and theme sync failures are less critical than weight unit failures
+                            },
+                          }
+                        );
+                      }
+                    }}
+                    disabled={updateProfileMutation.isPending}
                     trackColor={{ false: '#e2e8f0', true: '#10b981' }}
                     thumbColor={Platform.OS === 'ios' ? '#ffffff' : colorScheme === 'dark' ? '#ffffff' : '#f4f4f5'}
                   />
@@ -346,15 +517,24 @@ export default function ProfileScreen() {
               {/* Sign Out */}
               <TouchableOpacity
                 onPress={handleSignOut}
-                className="bg-card border border-border rounded-lg p-4 mb-4"
+                disabled={logoutMutation.isPending}
+                className={`bg-card border border-border rounded-lg p-4 mb-4 ${
+                  logoutMutation.isPending ? 'opacity-50' : ''
+                }`}
                 activeOpacity={0.7}
               >
                 <View className="flex-row items-center justify-between">
                   <View className="flex-row items-center gap-4">
                     <View className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
-                      <Ionicons name="log-out-outline" size={20} className="text-orange-600" />
+                      {logoutMutation.isPending ? (
+                        <ActivityIndicator size={16} color="#ea580c" />
+                      ) : (
+                        <Ionicons name="log-out-outline" size={20} className="text-orange-600" />
+                      )}
                     </View>
-                    <Text className="text-foreground font-medium">Sign Out</Text>
+                    <Text className="text-foreground font-medium">
+                      {logoutMutation.isPending ? 'Signing Out...' : 'Sign Out'}
+                    </Text>
                   </View>
                   <Ionicons name="chevron-forward" size={20} className="text-muted-foreground" />
                 </View>

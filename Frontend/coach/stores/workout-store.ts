@@ -19,6 +19,13 @@ import {
   STORAGE_KEYS,
   DEFAULT_WORKOUT_SESSION,
 } from '../types/workout';
+import { 
+  apiClient, 
+  type CreateWorkoutRequest,
+  type UpdateWorkoutRequest,
+  type WorkoutResponse,
+  type WorkoutWithExercisesResponse 
+} from '../services/api-client';
 
 // Constants
 const PERSISTENCE_DEBOUNCE = 500; // ms
@@ -448,6 +455,266 @@ export const useWorkoutStore = create<WorkoutStore>()(
           error: 'Failed to load workout data',
           isLoading: false 
         });
+      }
+    },
+
+    // ============================================================================
+    // Server Sync Methods (Phase 5.6)
+    // ============================================================================
+
+    /**
+     * Create workout on server and sync with local state
+     */
+    createWorkoutOnServer: async (title?: string) => {
+      const state = get();
+      
+      try {
+        set({ isLoading: true, error: null });
+
+        const workoutRequest: CreateWorkoutRequest = {
+          title: title || state.title || 'New Workout',
+          started_at: state.startTime?.toISOString(),
+        };
+
+        const serverWorkout = await apiClient.post<WorkoutResponse>('/workouts', workoutRequest);
+        
+        // Update local state with server data
+        set({
+          title: serverWorkout.title,
+          startTime: new Date(serverWorkout.started_at),
+          isActive: serverWorkout.is_active,
+          isLoading: false,
+          // Store server ID for future syncing
+          serverWorkoutId: serverWorkout.id,
+        });
+
+        console.log('Workout created on server:', serverWorkout.id);
+        return serverWorkout;
+      } catch (error) {
+        console.error('Failed to create workout on server:', error);
+        set({ 
+          isLoading: false, 
+          error: 'Failed to create workout on server' 
+        });
+        return null;
+      }
+    },
+
+    /**
+     * Sync current workout to server (create or update)
+     */
+    syncWorkoutToServer: async () => {
+      const state = get();
+      
+      if (!state.isActive && state.exercises.length === 0) {
+        console.log('No active workout to sync');
+        return null;
+      }
+
+      try {
+        set({ isLoading: true, error: null });
+
+        // If no server ID, create new workout
+        if (!(state as any).serverWorkoutId) {
+          return await get().createWorkoutOnServer();
+        }
+
+        // Update existing workout
+        const updateRequest: UpdateWorkoutRequest = {
+          title: state.title,
+          is_active: state.isActive,
+          duration: state.startTime ? 
+            Math.floor((Date.now() - state.startTime.getTime()) / 1000) : 
+            undefined,
+        };
+
+        const serverWorkout = await apiClient.put<WorkoutResponse>(
+          `/workouts/${(state as any).serverWorkoutId}`, 
+          updateRequest
+        );
+
+        set({ isLoading: false });
+        console.log('Workout synced to server successfully');
+        return serverWorkout;
+      } catch (error) {
+        console.error('Failed to sync workout to server:', error);
+        set({ 
+          isLoading: false, 
+          error: 'Failed to sync workout to server' 
+        });
+        return null;
+      }
+    },
+
+    /**
+     * Complete workout on server and add to history
+     */
+    completeWorkoutOnServer: async () => {
+      const state = get();
+      
+      if (!(state as any).serverWorkoutId) {
+        console.log('No server workout to complete, syncing first...');
+        await get().syncWorkoutToServer();
+      }
+
+      try {
+        set({ isLoading: true, error: null });
+
+        const updateRequest: UpdateWorkoutRequest = {
+          is_active: false,
+          completed_at: new Date().toISOString(),
+          duration: state.startTime ? 
+            Math.floor((Date.now() - state.startTime.getTime()) / 1000) : 
+            0,
+        };
+
+        const completedWorkout = await apiClient.put<WorkoutResponse>(
+          `/workouts/${(state as any).serverWorkoutId}`, 
+          updateRequest
+        );
+
+        // Add to local history and end workout
+        const historyItem: WorkoutHistoryItem = {
+          id: parseInt(completedWorkout.id, 10) || Date.now(),
+          title: completedWorkout.title,
+          date: new Date(completedWorkout.completed_at!).toLocaleDateString(),
+          day: new Date(completedWorkout.completed_at!).toLocaleDateString('en-US', { weekday: 'long' }),
+          time: new Date(completedWorkout.completed_at!).toLocaleTimeString('en-US', { 
+            hour: '2-digit', 
+            minute: '2-digit' 
+          }),
+          duration: completedWorkout.duration ? 
+            `${Math.floor(completedWorkout.duration / 60)}m` : 
+            '0m',
+          weightUnit: 'kg', // Default, should sync from user preferences
+          exercises: state.exercises.map(ex => ({
+            name: ex.name,
+            sets: ex.detailSets?.length || 0,
+            totalReps: ex.detailSets?.reduce((sum, set) => sum + set.reps, 0) || 0,
+            maxWeight: ex.detailSets?.reduce((max, set) => Math.max(max, set.weight), 0) || 0,
+            detailSets: ex.detailSets?.map((set, index) => ({
+              set: index + 1,
+              weight: set.weight,
+              reps: set.reps,
+              notes: set.notes,
+            })) || [],
+          })),
+        };
+
+        get().addToHistory(historyItem);
+        get().endWorkout();
+
+        set({ isLoading: false });
+        console.log('Workout completed on server successfully');
+        return completedWorkout;
+      } catch (error) {
+        console.error('Failed to complete workout on server:', error);
+        set({ 
+          isLoading: false, 
+          error: 'Failed to complete workout on server' 
+        });
+        return null;
+      }
+    },
+
+    /**
+     * Load active workout from server
+     */
+    loadActiveWorkoutFromServer: async () => {
+      try {
+        set({ isLoading: true, error: null });
+
+        // Get active workouts from server
+        const workouts = await apiClient.get<WorkoutResponse[]>('/workouts?is_active=true&limit=1');
+        
+        if (workouts.length === 0) {
+          set({ isLoading: false });
+          return null;
+        }
+
+        const activeWorkout = workouts[0];
+        
+        // Get detailed workout with exercises
+        const detailedWorkout = await apiClient.get<WorkoutWithExercisesResponse>(
+          `/workouts/${activeWorkout.id}`
+        );
+
+        // Convert server format to local format
+        const localExercises: WorkoutExercise[] = detailedWorkout.exercises.map(ex => ({
+          id: parseInt(ex.exercise_id, 10) || 0,
+          name: ex.exercise_details.name,
+          sets: [], // Keep empty for compatibility
+          detailSets: ex.sets.map(set => ({
+            id: parseInt(set.id, 10) || 0,
+            weight: set.weight || 0,
+            reps: set.reps || 0,
+            notes: set.notes || '',
+          })),
+          weightUnit: 'kg' as WeightUnit, // Default, sync from user preferences
+        }));
+
+        set({
+          title: detailedWorkout.title,
+          startTime: new Date(detailedWorkout.started_at),
+          isActive: detailedWorkout.is_active,
+          exercises: localExercises,
+          hasUnsavedChanges: false,
+          isLoading: false,
+          serverWorkoutId: detailedWorkout.id,
+        });
+
+        console.log('Active workout loaded from server');
+        return detailedWorkout;
+      } catch (error) {
+        console.error('Failed to load active workout from server:', error);
+        set({ 
+          isLoading: false, 
+          error: 'Failed to load active workout from server' 
+        });
+        return null;
+      }
+    },
+
+    /**
+     * Sync workout history from server
+     */
+    syncHistoryFromServer: async () => {
+      try {
+        set({ isLoading: true, error: null });
+
+        const workouts = await apiClient.get<WorkoutResponse[]>('/workouts?is_active=false&limit=50');
+        
+        const historyItems: WorkoutHistoryItem[] = workouts.map(workout => ({
+          id: parseInt(workout.id, 10) || 0,
+          title: workout.title,
+          date: new Date(workout.completed_at || workout.created_at).toLocaleDateString(),
+          day: new Date(workout.completed_at || workout.created_at).toLocaleDateString('en-US', { weekday: 'long' }),
+          time: new Date(workout.completed_at || workout.created_at).toLocaleTimeString('en-US', { 
+            hour: '2-digit', 
+            minute: '2-digit' 
+          }),
+          duration: workout.duration ? `${Math.floor(workout.duration / 60)}m` : '0m',
+          weightUnit: 'kg' as WeightUnit,
+          exercises: [], // Would need to fetch detailed workout to get exercises
+        }));
+
+        set({ 
+          history: historyItems,
+          isLoading: false 
+        });
+
+        // Persist to local storage
+        debouncedPersistHistory(historyItems);
+
+        console.log(`Synced ${historyItems.length} workouts from server`);
+        return historyItems;
+      } catch (error) {
+        console.error('Failed to sync history from server:', error);
+        set({ 
+          isLoading: false, 
+          error: 'Failed to sync workout history from server' 
+        });
+        return null;
       }
     },
   }))
