@@ -466,6 +466,125 @@ class SupabaseService:
                 detail="User creation failed"
             )
 
+    def get_user_profile_by_id(self, user_id: UUID) -> Optional[UserProfile]:
+        """
+        Retrieve user profile by ID for Phase 5.5 user profile endpoints.
+        
+        Args:
+            user_id: User UUID to retrieve
+            
+        Returns:
+            User profile or None if not found
+            
+        Raises:
+            HTTPException: If database error occurs
+        """
+        try:
+            # Query user by ID
+            response = self.client.table("users").select("*").eq("id", str(user_id)).execute()
+            
+            if not response.data:
+                logger.debug(f"User profile not found for ID: {user_id}")
+                return None
+            
+            user_data = response.data[0]
+            
+            # Parse preferences JSON
+            preferences_data = user_data.get("preferences", {})
+            preferences = UserPreferences(**preferences_data) if preferences_data else UserPreferences()
+            
+            # Create UserProfile object
+            user_profile = UserProfile(
+                id=UUID(user_data["id"]),
+                email=user_data["email"],
+                display_name=user_data.get("display_name"),
+                preferences=preferences,
+                created_at=datetime.fromisoformat(user_data["created_at"].replace("Z", "+00:00")),
+                updated_at=datetime.fromisoformat(user_data["updated_at"].replace("Z", "+00:00"))
+            )
+            
+            logger.debug(f"User profile retrieved for ID: {user_id}")
+            return user_profile
+            
+        except Exception as e:
+            logger.error(f"User profile retrieval failed for ID {user_id}: {str(e)}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Database error retrieving user profile"
+            )
+
+    def update_user_profile(self, user_id: UUID, update_data: UpdateUserRequest) -> Optional[UserProfile]:
+        """
+        Update user profile for Phase 5.5 user profile endpoints.
+        
+        Args:
+            user_id: User UUID to update
+            update_data: Validated update request data
+            
+        Returns:
+            Updated user profile or None if not found
+            
+        Raises:
+            HTTPException: If database error occurs
+        """
+        try:
+            # Prepare update data
+            update_dict = {}
+            
+            # Add display_name if provided
+            if update_data.display_name is not None:
+                update_dict["display_name"] = update_data.display_name
+            
+            # Add preferences if provided
+            if update_data.preferences is not None:
+                # Get existing preferences first to merge partial updates
+                existing_user = self.get_user_profile_by_id(user_id)
+                if not existing_user:
+                    return None
+                
+                # Merge existing preferences with updates
+                existing_prefs = existing_user.preferences.model_dump()
+                new_prefs = update_data.preferences.model_dump(exclude_none=True)
+                merged_prefs = {**existing_prefs, **new_prefs}
+                
+                update_dict["preferences"] = merged_prefs
+            
+            # Add updated_at timestamp
+            update_dict["updated_at"] = datetime.utcnow().isoformat()
+            
+            # Perform update
+            response = self.client.table("users").update(update_dict).eq("id", str(user_id)).execute()
+            
+            if not response.data:
+                logger.warning(f"User profile not found for update: {user_id}")
+                return None
+            
+            updated_user_data = response.data[0]
+            
+            # Parse updated preferences
+            preferences_data = updated_user_data.get("preferences", {})
+            preferences = UserPreferences(**preferences_data) if preferences_data else UserPreferences()
+            
+            # Create updated UserProfile object
+            updated_profile = UserProfile(
+                id=UUID(updated_user_data["id"]),
+                email=updated_user_data["email"],
+                display_name=updated_user_data.get("display_name"),
+                preferences=preferences,
+                created_at=datetime.fromisoformat(updated_user_data["created_at"].replace("Z", "+00:00")),
+                updated_at=datetime.fromisoformat(updated_user_data["updated_at"].replace("Z", "+00:00"))
+            )
+            
+            logger.info(f"User profile updated for ID: {user_id}")
+            return updated_profile
+            
+        except Exception as e:
+            logger.error(f"User profile update failed for ID {user_id}: {str(e)}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Database error updating user profile"
+            )
+
 
 # Import necessary modules
 import os

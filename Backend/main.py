@@ -10,6 +10,7 @@ from core.config import settings
 from routers.auth import router as auth_router
 from routers.workouts import router as workouts_router
 from routers.exercises import router as exercises_router
+from routers.users import router as users_router
 
 app = FastAPI(
     title="FM-SetLogger API",
@@ -36,6 +37,7 @@ app.add_middleware(
 app.include_router(auth_router)
 app.include_router(workouts_router)
 app.include_router(exercises_router)
+app.include_router(users_router)
 
 class HealthResponse(BaseModel):
     status: str
@@ -57,7 +59,7 @@ async def root():
     return {
         "name": "FM-SetLogger API",
         "version": "1.0.0",
-        "phase": "5.4 - Workout & Exercise CRUD Endpoints with Authentication",
+        "phase": "5.5 - User Profile Management Endpoints",
         "documentation": "/docs"
     }
 

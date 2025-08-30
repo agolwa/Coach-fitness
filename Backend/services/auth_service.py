@@ -454,6 +454,97 @@ class AuthService:
                 detail="User profile retrieval failed"
             )
 
+    def get_user_profile_by_id(self, user_id: UUID, supabase_client: Optional['Client'] = None) -> 'UserProfile':
+        """
+        Retrieve user profile by user ID for Phase 5.5 user profile endpoints.
+        
+        Args:
+            user_id: User UUID to retrieve profile for
+            supabase_client: Optional Supabase client for dependency injection
+            
+        Returns:
+            User profile with preferences
+            
+        Raises:
+            HTTPException: If user not found or database error
+        """
+        from .supabase_client import SupabaseService
+        
+        try:
+            # Initialize Supabase service with optional client
+            supabase_service = SupabaseService(supabase_client)
+            
+            # Get user profile from database
+            user_profile = supabase_service.get_user_profile_by_id(user_id)
+            
+            if not user_profile:
+                logger.warning(f"User profile not found for ID: {user_id}")
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="User profile not found"
+                )
+            
+            logger.debug(f"User profile retrieved for ID: {user_id}")
+            return user_profile
+            
+        except HTTPException:
+            # Re-raise HTTP exceptions
+            raise
+        except Exception as e:
+            logger.error(f"User profile retrieval failed for ID {user_id}: {str(e)}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="User profile retrieval failed"
+            )
+
+    def update_user_profile(self, user_id: UUID, update_data: Dict[str, Any], supabase_client: Optional['Client'] = None) -> 'UserProfile':
+        """
+        Update user profile for Phase 5.5 user profile endpoints.
+        
+        Args:
+            user_id: User UUID to update
+            update_data: Dictionary containing fields to update
+            supabase_client: Optional Supabase client for dependency injection
+            
+        Returns:
+            Updated user profile
+            
+        Raises:
+            HTTPException: If user not found, validation error, or database error
+        """
+        from .supabase_client import SupabaseService
+        from models.user import UpdateUserRequest
+        
+        try:
+            # Initialize Supabase service with optional client
+            supabase_service = SupabaseService(supabase_client)
+            
+            # Validate update data using existing model
+            update_request = UpdateUserRequest(**update_data)
+            
+            # Update user profile in database
+            updated_profile = supabase_service.update_user_profile(user_id, update_request)
+            
+            if not updated_profile:
+                logger.warning(f"User profile not found for update: {user_id}")
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="User profile not found"
+                )
+            
+            logger.info(f"User profile updated for ID: {user_id}")
+            return updated_profile
+            
+        except HTTPException:
+            # Re-raise HTTP exceptions (validation errors, not found)
+            raise
+        except Exception as e:
+            logger.error(f"User profile update failed for ID {user_id}: {str(e)}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="User profile update failed"
+            )
+
 
 # Authentication dependency for FastAPI
 def get_current_user(authorization: str = Header(None)) -> Dict[str, Any]:

@@ -2,7 +2,7 @@
 name: auto-document
 description: Intelligent Code Review & Architecture Documentation Agent: Automatically analyzes git diffs against main branch, investigates additional files for complete context, and determines architectural significance of changes. Auto-ADR Generator: Creates detailed Architecture Decision Records (ADRs) for significant changes, documenting technical decisions, implementation details, and trade-offs found in the actual code rather than hypotheticals.
 ---
-Run `git diff main` to analyze all changes made in this branch. 
+Run `git diff main` to analyze all changes made in this branch. However if the user has asked you to document the progress made, you can check the changes made from staging and update the changes in the file the user has asked, most likely: progress.md file. 
 
 **Your task:**
 1. Review the COMPLETE diff output to understand what was implemented
