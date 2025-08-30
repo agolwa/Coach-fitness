@@ -1,25 +1,32 @@
 """
-FastAPI Backend for FM-SetLogger Phase 5.1
-Database Foundation & Row-Level Security Implementation
+FastAPI Backend for FM-SetLogger Phase 5.2
+FastAPI Project Setup with CORS and Configuration
 """
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from core.config import settings
 
 app = FastAPI(
     title="FM-SetLogger API",
-    description="Fitness tracking backend with secure multi-user database foundation",
+    description="Fitness tracking backend with secure multi-user configuration and CORS",
     version="1.0.0"
 )
 
-# CORS middleware for React Native app
+# CORS middleware configuration for React Native app
+cors_origins = settings.cors_origins.split(',') if hasattr(settings, 'cors_origins') and settings.cors_origins else [
+    "http://localhost:8084",  # React Native development
+    "exp://192.168.1.0:8084",  # Expo development
+    "http://localhost:3000",  # Web development
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure properly for production
+    allow_origins=cors_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "x-requested-with"],
 )
 
 class HealthResponse(BaseModel):
@@ -42,7 +49,7 @@ async def root():
     return {
         "name": "FM-SetLogger API",
         "version": "1.0.0",
-        "phase": "5.1 - Database Foundation & RLS",
+        "phase": "5.2 - FastAPI Project Setup & CORS Configuration",
         "documentation": "/docs"
     }
 
