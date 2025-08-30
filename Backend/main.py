@@ -1,6 +1,6 @@
 """
-FastAPI Backend for FM-SetLogger Phase 5.3
-Authentication Endpoints with JWT and Google OAuth Integration
+FastAPI Backend for FM-SetLogger Phase 5.4
+Workout & Exercise CRUD Endpoints with Authentication
 """
 
 from fastapi import FastAPI
@@ -8,6 +8,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from core.config import settings
 from routers.auth import router as auth_router
+from routers.workouts import router as workouts_router
+from routers.exercises import router as exercises_router
 
 app = FastAPI(
     title="FM-SetLogger API",
@@ -30,8 +32,10 @@ app.add_middleware(
     allow_headers=["Authorization", "Content-Type", "x-requested-with"],
 )
 
-# Register authentication router
+# Register routers
 app.include_router(auth_router)
+app.include_router(workouts_router)
+app.include_router(exercises_router)
 
 class HealthResponse(BaseModel):
     status: str
@@ -53,7 +57,7 @@ async def root():
     return {
         "name": "FM-SetLogger API",
         "version": "1.0.0",
-        "phase": "5.3 - Authentication Endpoints with JWT and Google OAuth Integration",
+        "phase": "5.4 - Workout & Exercise CRUD Endpoints with Authentication",
         "documentation": "/docs"
     }
 
