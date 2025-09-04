@@ -92,7 +92,8 @@ async def create_workout(
         # Create workout using existing WorkoutService
         workout_response = workout_service.create_workout(
             user_id=UUID(current_user["id"]),
-            workout_data=workout_data
+            workout_data=workout_data,
+            user_email=current_user["email"]
         )
         
         logger.info(f"Workout created successfully: {workout_response.id}")

@@ -21,6 +21,8 @@ import * as Haptics from 'expo-haptics';
 
 import { useExerciseStore } from '@/stores/exercise-store';
 import { useExercises, useExerciseBodyParts, useExerciseEquipment } from '@/hooks/use-exercises';
+import { APIError } from '@/services/api-client';
+import { getErrorMessage } from '@/services/error-utils';
 import { useWorkoutStore } from '@/stores/workout-store';
 import { useUserStore } from '@/stores/user-store';
 import { useTheme } from '@/hooks/use-theme';
@@ -39,6 +41,8 @@ interface DropdownState {
   showMuscleDropdown: boolean;
   showEquipmentDropdown: boolean;
 }
+
+// Error message extraction centralized in services/error-utils.ts
 
 export default function AddExercisesScreen() {
   const insets = useSafeAreaInsets();
@@ -65,7 +69,7 @@ export default function AddExercisesScreen() {
     search: debouncedSearchTerm || undefined,
     body_part: dropdown.muscle !== 'All' ? [dropdown.muscle] : undefined,
     equipment: dropdown.equipment !== 'All' ? [dropdown.equipment] : undefined,
-    limit: 1000, // Load large batch for better UX
+    limit: 200, // Load large batch while respecting backend limit constraint
   };
 
   // Load exercises from server
@@ -782,7 +786,7 @@ export default function AddExercisesScreen() {
       {(exerciseStore.error || serverError) && (
         <View className="absolute top-20 left-4 right-4 bg-destructive p-3 rounded-lg">
           <Text className="text-destructive-foreground text-center">
-            {serverError?.detail || serverError?.toString() || exerciseStore.error || 'An error occurred'}
+            {serverError ? getErrorMessage(serverError) : exerciseStore.error || 'An error occurred while loading exercises'}
           </Text>
           <TouchableOpacity
             onPress={() => {

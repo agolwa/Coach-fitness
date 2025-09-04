@@ -45,7 +45,7 @@ export interface ExerciseFilters {
   body_part?: string[];
   equipment?: string[];
   search?: string;
-  limit?: number;
+  limit?: number; // Note: Backend enforces max limit of 200
   offset?: number;
 }
 
@@ -77,6 +77,7 @@ export interface ExerciseBodyPart {
 
 /**
  * Hook to fetch paginated exercise list with filtering
+ * Note: Backend limits the maximum number of results to 200 per request
  */
 export function useExercises(filters: ExerciseFilters = {}) {
   const { isSignedIn } = useUserStore();

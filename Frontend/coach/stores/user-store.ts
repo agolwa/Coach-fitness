@@ -205,6 +205,8 @@ export const useUserStore = create<UserStore>()(
       const state = get();
       
       try {
+        console.log('🚀 Development: Creating test user authentication...');
+        
         // Create a valid JWT token using the backend's secret key
         const jwtSecret = 'test_super_secret_jwt_key_for_authentication_tests_32_chars_min';
         const now = Math.floor(Date.now() / 1000);
@@ -216,7 +218,7 @@ export const useUserStore = create<UserStore>()(
         };
         
         const payload = {
-          sub: 'test-user-123',
+          sub: '550e8400-e29b-41d4-a716-446655440000', // Valid UUID format for test user
           email: 'test@example.com',
           iat: now,
           exp: exp
@@ -238,11 +240,16 @@ export const useUserStore = create<UserStore>()(
         
         const jwtToken = `${data}.${signature}`;
         
+        console.log('🚀 Development: Storing JWT token...');
         await TokenManager.setTokens({
           access_token: jwtToken,
           token_type: 'bearer',
           expires_in: 3600,
         });
+        
+        // Verify token was stored
+        const storedToken = await TokenManager.getAccessToken();
+        console.log('🚀 Development: Token stored successfully:', storedToken ? 'YES' : 'NO');
         
         const newPreferences = {
           authState: 'signed-in' as AuthState,
@@ -260,23 +267,23 @@ export const useUserStore = create<UserStore>()(
         
         debouncedPersist(fullState as UserPreferences);
         
-        console.log('🚀 Development: Auto-signed in with valid JWT token');
+        console.log('🚀 Development: Test user signed in successfully');
+        console.log('🚀 Development: Auth state:', newPreferences.authState);
+        console.log('🚀 Development: Is signed in:', newPreferences.isSignedIn);
+        
+        // Test the authentication by making a call to /auth/me
+        try {
+          console.log('🚀 Development: Testing authentication with /auth/me...');
+          const response = await apiClient.get('/auth/me');
+          console.log('🚀 Development: Authentication test successful:', response);
+        } catch (testError) {
+          console.error('🚀 Development: Authentication test failed:', testError);
+        }
+        
       } catch (error) {
         console.error('Failed to create development JWT token:', error);
-        // Fall back to previous method if JWT creation fails
-        const mockHeader = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
-        const mockPayload = btoa(JSON.stringify({ 
-          sub: 'test-user-123',
-          email: 'test@example.com', 
-          exp: Math.floor(Date.now() / 1000) + 3600 
-        }));
-        const mockSignature = btoa('dev-signature');
-        const mockToken = `${mockHeader}.${mockPayload}.${mockSignature}`;
-        await TokenManager.setTokens({
-          access_token: mockToken,
-          token_type: 'bearer',
-          expires_in: 3600,
-        });
+        // Fall back to guest mode if JWT creation fails
+        get().continueAsGuest();
       }
     },
 
@@ -567,12 +574,13 @@ export const useUserStore = create<UserStore>()(
       
       if (!state.isSignedIn) {
         console.log('Not signed in, skipping server sync');
-        return;
+        return null;
       }
 
       try {
         set({ isLoading: true, error: null });
 
+        console.log('🔄 Syncing preferences from server...');
         const userProfile = await apiClient.get<UserResponse>('/auth/me');
 
         // Update local preferences with server data
@@ -591,17 +599,44 @@ export const useUserStore = create<UserStore>()(
         
         debouncedPersist(fullState as UserPreferences);
 
-        console.log('Preferences synced from server successfully');
+        console.log('✅ Preferences synced from server successfully');
         return userProfile;
       } catch (error) {
-        console.error('Failed to sync preferences from server:', error);
+        console.error('❌ Failed to sync preferences from server:', error);
+        
+        // In development mode, don't fail session validation due to server sync issues
+        if (__DEV__) {
+          console.log('🚀 Development: Ignoring server sync failure, keeping session active');
+          set({ 
+            isLoading: false, 
+            error: null  // Don't set error in dev mode
+          });
+          
+          // Return a mock user profile for development
+          return {
+            id: '550e8400-e29b-41d4-a716-446655440000',
+            email: 'test@example.com',
+            display_name: 'Test User',
+            preferences: {
+              weightUnit: state.weightUnit || 'kg',
+              theme: 'auto',
+              defaultRestTimer: 60,
+              hapticFeedback: true,
+              soundEnabled: true,
+              autoStartRestTimer: true,
+            },
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          } as UserResponse;
+        }
+        
         set({ 
           isLoading: false, 
           error: 'Failed to sync preferences from server' 
         });
         
-        // If authentication error, sign out user
-        if (error instanceof Error && error.message.includes('401')) {
+        // If authentication error, sign out user (but not in development mode)
+        if (!__DEV__ && error instanceof Error && error.message.includes('401')) {
           get().signOut();
           await TokenManager.clearTokens();
         }
@@ -696,16 +731,19 @@ export const useUserStore = create<UserStore>()(
      */
     validateServerSession: async () => {
       try {
+        console.log('🔍 Validating server session...');
         const accessToken = await TokenManager.getAccessToken();
         
         if (!accessToken) {
-          console.log('No access token found, user not authenticated');
+          console.log('❌ No access token found, user not authenticated');
           return false;
         }
 
+        console.log('✅ Access token found, checking expiry...');
         const isExpired = await TokenManager.isTokenExpired();
         
         if (isExpired) {
+          console.log('⚠️ Token expired, trying to refresh...');
           // Try to refresh token
           const refreshToken = await TokenManager.getRefreshToken();
           
@@ -716,32 +754,58 @@ export const useUserStore = create<UserStore>()(
               });
               
               await TokenManager.setTokens(response);
-              console.log('Token refreshed successfully');
+              console.log('✅ Token refreshed successfully');
             } catch (error) {
-              console.log('Token refresh failed');
+              console.log('❌ Token refresh failed:', error);
+              
+              // In development mode, be more forgiving
+              if (__DEV__) {
+                console.log('🚀 Development: Allowing expired token to continue');
+              } else {
+                await TokenManager.clearTokens();
+                get().signOut();
+                return false;
+              }
+            }
+          } else {
+            console.log('❌ No refresh token available');
+            
+            // In development mode, be more forgiving
+            if (__DEV__) {
+              console.log('🚀 Development: Allowing session without refresh token');
+            } else {
               await TokenManager.clearTokens();
               get().signOut();
               return false;
             }
-          } else {
-            console.log('No refresh token available');
-            await TokenManager.clearTokens();
-            get().signOut();
-            return false;
           }
         }
 
         // Validate session with server
+        console.log('🔄 Validating session with server...');
         const userProfile = await get().syncPreferencesFromServer();
         
         if (userProfile) {
-          console.log('Server session validated successfully');
+          console.log('✅ Server session validated successfully');
           return true;
         } else {
+          console.log('⚠️ Server session validation returned no profile');
+          // In development mode, still consider it valid if we have a token
+          if (__DEV__) {
+            console.log('🚀 Development: Accepting session despite sync failure');
+            return true;
+          }
           return false;
         }
       } catch (error) {
-        console.error('Session validation failed:', error);
+        console.error('❌ Session validation failed:', error);
+        
+        // In development mode, be more forgiving with validation errors
+        if (__DEV__) {
+          console.log('🚀 Development: Ignoring session validation errors');
+          return true;
+        }
+        
         await TokenManager.clearTokens();
         get().signOut();
         return false;

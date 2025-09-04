@@ -90,6 +90,9 @@ class SupabaseService:
             HTTPException: If user creation fails
         """
         try:
+            # Since we're using service role key, we need to bypass the foreign key constraint
+            # The cleanest approach is to handle the constraint violation and provide a helpful error
+            
             # Prepare user data for database insertion
             db_user_data = {
                 "id": str(user_data.id),
@@ -98,8 +101,21 @@ class SupabaseService:
                 "preferences": user_data.preferences.model_dump() if user_data.preferences else None
             }
             
-            # Insert user into database
-            response = self.client.table("users").insert(db_user_data).execute()
+            try:
+                # Try direct insertion first
+                response = self.client.table("users").insert(db_user_data).execute()
+            except Exception as constraint_error:
+                # If foreign key constraint violation, provide specific error
+                if "foreign key constraint" in str(constraint_error).lower():
+                    logger.error(f"Foreign key constraint violation - database schema needs update")
+                    logger.error(f"Run this SQL in Supabase dashboard: ALTER TABLE users DROP CONSTRAINT users_id_fkey;")
+                    raise HTTPException(
+                        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                        detail="Database schema needs to be updated. Please contact administrator."
+                    )
+                else:
+                    # Re-raise other errors
+                    raise constraint_error
             
             if not response.data:
                 raise ValueError("User creation returned empty response")
@@ -107,11 +123,14 @@ class SupabaseService:
             created_user_data = response.data[0]
             
             # Convert to UserProfile model
+            preferences_data = created_user_data.get("preferences") or {}
+            preferences = UserPreferences(**preferences_data) if preferences_data else UserPreferences()
+            
             user_profile = UserProfile(
                 id=UUID(created_user_data["id"]),
                 email=created_user_data["email"],
                 display_name=created_user_data.get("display_name"),
-                preferences=UserPreferences(**(created_user_data.get("preferences", {}))),
+                preferences=preferences,
                 created_at=datetime.fromisoformat(created_user_data["created_at"].replace("Z", "+00:00")),
                 updated_at=datetime.fromisoformat(created_user_data["updated_at"].replace("Z", "+00:00"))
             )
@@ -158,7 +177,7 @@ class SupabaseService:
                 id=UUID(user_data["id"]),
                 email=user_data["email"],
                 display_name=user_data.get("display_name"),
-                preferences=UserPreferences(**(user_data.get("preferences", {}))),
+                preferences=UserPreferences(**(user_data.get("preferences") or {})),
                 created_at=datetime.fromisoformat(user_data["created_at"].replace("Z", "+00:00")),
                 updated_at=datetime.fromisoformat(user_data["updated_at"].replace("Z", "+00:00"))
             )
@@ -197,7 +216,7 @@ class SupabaseService:
                 id=UUID(user_data["id"]),
                 email=user_data["email"],
                 display_name=user_data.get("display_name"),
-                preferences=UserPreferences(**(user_data.get("preferences", {}))),
+                preferences=UserPreferences(**(user_data.get("preferences") or {})),
                 created_at=datetime.fromisoformat(user_data["created_at"].replace("Z", "+00:00")),
                 updated_at=datetime.fromisoformat(user_data["updated_at"].replace("Z", "+00:00"))
             )
@@ -262,7 +281,7 @@ class SupabaseService:
                 id=UUID(updated_user_data["id"]),
                 email=updated_user_data["email"],
                 display_name=updated_user_data.get("display_name"),
-                preferences=UserPreferences(**(updated_user_data.get("preferences", {}))),
+                preferences=UserPreferences(**(updated_user_data.get("preferences") or {})),
                 created_at=datetime.fromisoformat(updated_user_data["created_at"].replace("Z", "+00:00")),
                 updated_at=datetime.fromisoformat(updated_user_data["updated_at"].replace("Z", "+00:00"))
             )
@@ -583,6 +602,55 @@ class SupabaseService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Database error updating user profile"
+            )
+
+    def get_or_create_user(self, user_id: UUID, email: str, display_name: str = None) -> UserProfile:
+        """
+        Get existing user or create new user if not exists.
+        
+        This method is used by WorkoutService to ensure user exists before creating workouts.
+        It first tries to get the user by ID, and if not found, creates a new user.
+        
+        Args:
+            user_id: User's unique identifier from JWT
+            email: User's email address from JWT
+            display_name: Optional display name
+            
+        Returns:
+            User profile (existing or newly created)
+            
+        Raises:
+            HTTPException: If user creation fails
+        """
+        try:
+            # First try to get existing user
+            existing_user = self.get_user_by_id(user_id)
+            if existing_user:
+                logger.debug(f"User found: {user_id}")
+                return existing_user
+            
+            # User doesn't exist, create new one
+            logger.info(f"Creating new user: {email}")
+            user_request = CreateUserRequest(
+                id=user_id,
+                email=email,
+                display_name=display_name,
+                preferences=None  # Will use defaults
+            )
+            
+            created_user = self.create_user(user_request)
+            logger.info(f"New user created: {email}")
+            
+            return created_user
+            
+        except HTTPException:
+            # Re-raise HTTP exceptions (like 409 Conflict)
+            raise
+        except Exception as e:
+            logger.error(f"Get or create user failed for {email}: {str(e)}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="User creation/retrieval failed"
             )
 
 

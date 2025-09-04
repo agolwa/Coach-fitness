@@ -425,19 +425,77 @@ export class APIClient {
 
   // Error response handler
   private async handleErrorResponse(response: Response): Promise<never> {
-    let errorMessage = `HTTP ${response.status}`;
+    let errorMessage: string = `HTTP ${response.status}`;
     let errorCode = 'UNKNOWN_ERROR';
 
     try {
-      const errorData: APIErrorResponse = await response.json();
-      errorMessage = errorData.detail || errorMessage;
-      errorCode = errorData.error_code || errorCode;
-    } catch {
-      // If parsing error response fails, use status text
-      errorMessage = response.statusText || errorMessage;
-    }
+      // Parse without assuming shape; FastAPI validation errors often return an array in `detail`
+      const raw = await response.json();
 
-    throw new APIError(errorMessage, response.status, errorCode);
+      // Extract an error code if present
+      if (raw && typeof raw === 'object' && 'error_code' in raw && typeof raw.error_code === 'string') {
+        errorCode = raw.error_code;
+      }
+
+      // Helper to join validation messages
+      const joinMessages = (items: any[]): string => {
+        return items
+          .map((item) => {
+            if (!item) return '';
+            // FastAPI validation item usually has `msg` and `loc`
+            if (typeof item === 'object') {
+              const msg = (item.msg as string) || (item.message as string);
+              const loc = Array.isArray(item.loc) ? ` at ${item.loc.join('.')}` : '';
+              if (msg) return `${msg}${loc}`;
+              try { return JSON.stringify(item); } catch { return String(item); }
+            }
+            return String(item);
+          })
+          .filter(Boolean)
+          .join('; ');
+      };
+
+      // Determine the best human-readable message
+      if (raw && typeof raw === 'object') {
+        // 1) FastAPI: detail can be string | array | object
+        if ('detail' in raw) {
+          const detail: any = (raw as any).detail;
+          if (typeof detail === 'string') {
+            errorMessage = detail;
+          } else if (Array.isArray(detail)) {
+            errorMessage = joinMessages(detail) || errorMessage;
+          } else if (detail && typeof detail === 'object') {
+            // Sometimes detail is an object with `message`
+            if (typeof detail.message === 'string') {
+              errorMessage = detail.message;
+            } else {
+              try { errorMessage = JSON.stringify(detail); } catch { /* noop */ }
+            }
+          }
+        }
+        
+        // 2) Generic message field
+        if (errorMessage === `HTTP ${response.status}` && typeof (raw as any).message === 'string') {
+          errorMessage = (raw as any).message;
+        }
+      }
+
+      // Fallback to status text if nothing useful was extracted
+      if (!errorMessage || errorMessage === `HTTP ${response.status}`) {
+        errorMessage = response.statusText || errorMessage;
+      }
+
+      // Throw with raw payload preserved for debugging
+      throw new APIError(errorMessage, response.status, errorCode, raw);
+    } catch (parseError) {
+      // If we already constructed an APIError above, rethrow it
+      if (parseError instanceof APIError) {
+        throw parseError;
+      }
+      // If parsing fails entirely, use status text and rethrow
+      const fallbackMessage = response.statusText || `HTTP ${response.status}`;
+      throw new APIError(fallbackMessage, response.status, errorCode);
+    }
   }
 
   // HTTP method helpers

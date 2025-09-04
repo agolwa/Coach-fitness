@@ -23,6 +23,7 @@ import { router } from 'expo-router';
 import { useUserStore } from '@/stores/user-store';
 import { useThemeColors } from '@/hooks/use-theme';
 import { auth } from '@/services/supabase';
+import { apiClient, GoogleAuthRequest, LoginResponse } from '@/services/api-client';
 import * as Haptics from 'expo-haptics';
 
 const { width } = Dimensions.get('window');
@@ -58,13 +59,68 @@ export default function SignupScreen() {
           name: session.user.user_metadata?.full_name || session.user.user_metadata?.name,
         });
         
-        // Update auth state in user store
-        signIn();
-        
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        router.replace('/(tabs)');
+        try {
+          // Get the tokens from Supabase session
+          const providerToken = session.provider_token;
+          const providerRefreshToken = session.provider_refresh_token;
+          
+          // For Google OAuth, Supabase provides the access token as provider_token
+          // We need to get the ID token as well, but Supabase might not provide it
+          // For now, we'll try to use the available tokens
+          
+          if (!providerToken) {
+            throw new Error('No provider token available from Supabase session');
+          }
+          
+          console.log('Authenticating with backend using Google OAuth tokens...');
+          
+          // Try to authenticate with backend using the Google OAuth endpoint
+          // Note: We're using the provider_token as both access token and ID token
+          // This might need adjustment based on what Supabase actually provides
+          const googleAuthRequest: GoogleAuthRequest = {
+            token: providerToken,
+            google_jwt: providerToken, // Using same token for now - might need to be different
+          };
+          
+          const loginResponse: LoginResponse = await apiClient.post<LoginResponse>('/auth/google', googleAuthRequest);
+          
+          if (loginResponse) {
+            console.log('Backend authentication successful');
+            
+            // Store the JWT tokens using the user store
+            const authResult = await useUserStore.getState().authenticateWithServer({
+              access_token: loginResponse.access_token,
+              token_type: loginResponse.token_type,
+              expires_in: loginResponse.expires_in,
+              refresh_token: loginResponse.refresh_token,
+            });
+            
+            if (authResult) {
+              console.log('Token storage and user sync successful');
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              router.replace('/(tabs)');
+            } else {
+              throw new Error('Failed to store tokens and sync user data');
+            }
+          } else {
+            throw new Error('No response from backend authentication');
+          }
+        } catch (error) {
+          console.error('Backend authentication error:', error);
+          
+          // Sign out from Supabase if backend auth fails
+          await auth.signOut();
+          
+          Alert.alert(
+            'Authentication Error',
+            'Unable to complete sign in with our servers. Please try again.',
+            [{ text: 'OK' }]
+          );
+          setIsSigningIn(false);
+        }
       } else if (event === 'SIGNED_OUT') {
         console.log('User signed out');
+        setIsSigningIn(false);
       }
     });
 

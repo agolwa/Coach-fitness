@@ -54,6 +54,96 @@ security = HTTPBearer()
 exercise_service = ExerciseService()
 
 
+@router.get("/body-parts", response_model=List[Dict[str, Any]], status_code=200)
+async def get_exercise_body_parts(
+    current_user: Dict[str, Any] = Depends(get_current_user)
+) -> List[Dict[str, Any]]:
+    """
+    Get available body parts for exercise filtering.
+    
+    Provides a list of distinct body parts available in the exercise library
+    for building filter interfaces in the UI.
+    
+    Args:
+        current_user: Current user data from JWT (injected by dependency)
+        
+    Returns:
+        List of body part objects with id and name
+        
+    Raises:
+        HTTPException: 401 for invalid JWT, 500 for server errors
+    """
+    try:
+        logger.debug(f"Exercise body parts request from user {current_user['id']}")
+        
+        # Get filter options using ExerciseService
+        filter_options = exercise_service.get_filter_options()
+        
+        # Transform body_parts to expected format
+        body_parts = [
+            {"id": idx + 1, "name": body_part}
+            for idx, body_part in enumerate(filter_options.body_parts)
+        ]
+        
+        logger.debug(f"Retrieved {len(body_parts)} body parts")
+        return body_parts
+        
+    except HTTPException:
+        # Re-raise HTTP exceptions from services
+        raise
+    except Exception as e:
+        logger.error(f"Exercise body parts retrieval failed: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Exercise body parts retrieval failed"
+        )
+
+
+@router.get("/equipment", response_model=List[Dict[str, Any]], status_code=200)
+async def get_exercise_equipment(
+    current_user: Dict[str, Any] = Depends(get_current_user)
+) -> List[Dict[str, Any]]:
+    """
+    Get available equipment types for exercise filtering.
+    
+    Provides a list of distinct equipment types available in the exercise library
+    for building filter interfaces in the UI.
+    
+    Args:
+        current_user: Current user data from JWT (injected by dependency)
+        
+    Returns:
+        List of equipment objects with id and name
+        
+    Raises:
+        HTTPException: 401 for invalid JWT, 500 for server errors
+    """
+    try:
+        logger.debug(f"Exercise equipment request from user {current_user['id']}")
+        
+        # Get filter options using ExerciseService
+        filter_options = exercise_service.get_filter_options()
+        
+        # Transform equipment to expected format
+        equipment = [
+            {"id": idx + 1, "name": eq}
+            for idx, eq in enumerate(filter_options.equipment_types)
+        ]
+        
+        logger.debug(f"Retrieved {len(equipment)} equipment types")
+        return equipment
+        
+    except HTTPException:
+        # Re-raise HTTP exceptions from services
+        raise
+    except Exception as e:
+        logger.error(f"Exercise equipment retrieval failed: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Exercise equipment retrieval failed"
+        )
+
+
 @router.get("", response_model=List[ExerciseResponse], status_code=200)
 async def get_exercise_library(
     category: Optional[ExerciseCategory] = Query(None, description="Filter by exercise category"),
@@ -331,6 +421,8 @@ async def exercise_health_check():
             "GET /exercises/stats - Get exercise library statistics",
             "GET /exercises/summaries - Get lightweight exercise summaries",
             "GET /exercises/filter-options - Get available filter options",
-            "GET /exercises/search - Search exercises by name"
+            "GET /exercises/search - Search exercises by name",
+            "GET /exercises/body-parts - Get available body parts",
+            "GET /exercises/equipment - Get available equipment types"
         ]
     }

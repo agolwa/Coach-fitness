@@ -4,21 +4,33 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Architecture
 
-This is a **React Native fitness app** built with **Expo SDK 53** using **TypeScript**. The app helps users log and track their workout exercises.
+This is a **full-stack fitness tracking application** with a **React Native frontend** and **FastAPI backend**. The app helps users log and track their workout exercises with secure multi-user authentication and real-time data synchronization.
 
 ### Technology Stack
-- **Frontend**: React Native with Expo Router (file-based routing)
+
+#### Frontend (`Frontend/coach/`)
+- **Framework**: React Native with Expo SDK 53 using TypeScript
+- **Routing**: Expo Router (file-based routing)
 - **State Management**: Zustand with persistence via AsyncStorage
+- **API Integration**: React Query for server state management
 - **Styling**: NativeWind (Tailwind CSS for React Native) with HSL-based design system
 - **Forms**: React Hook Form
 - **Testing**: Jest with React Testing Library
-- **Data Persistence**: AsyncStorage for local data
+- **Data Persistence**: AsyncStorage for offline data, Supabase for server data
+
+#### Backend (`Backend/`)
+- **Framework**: FastAPI with Python 3.9+
+- **Database**: Supabase (PostgreSQL) with Row Level Security (RLS)
+- **Authentication**: JWT tokens with refresh token rotation
+- **Testing**: pytest with comprehensive test coverage
+- **API Documentation**: Automatic OpenAPI/Swagger docs
+- **Environment Management**: python-dotenv for configuration
 
 ### Core Architecture Patterns
 
-**Dual Project Structure**: The repository contains two identical React Native apps:
-- Root level: Primary development version
-- `Frontend/coach/`: Secondary version with additional features (auth, enhanced stores)
+**Full-Stack Architecture**: The repository contains integrated frontend and backend:
+- `Frontend/coach/`: React Native app with Expo Router and full-stack integration
+- `Backend/`: FastAPI application with authentication, workout management, and database integration
 
 **State Management**: Centralized Zustand stores with automatic persistence:
 - `user-store.ts`: User preferences, authentication state, weight units
@@ -33,21 +45,64 @@ This is a **React Native fitness app** built with **Expo SDK 53** using **TypeSc
 
 ## Common Commands
 
-### Development
+### Frontend Development (`Frontend/coach/`)
 ```bash
+# Navigate to frontend directory
+cd Frontend/coach
+
 # Install dependencies
 npm install
 
-# Start development server
-npm start
-# or platform-specific
+# Start development server (default port 8082)
+npm run dev
+
+# Start development server (other options)
+npm start              # Interactive mode
+npm run start:clear    # Clear cache
+npm run start:tunnel   # Tunnel mode for external access
+
+# Platform-specific development
 npm run android
 npm run ios
 npm run web
+
+# Environment switching
+npm run env:local      # Switch to local environment
+npm run env:development # Switch to development environment
+npm run env:staging    # Switch to staging environment
+npm run env:production # Switch to production environment
+
+# Start with specific environments
+npm run start:local
+npm run start:staging
+npm run start:production
+```
+
+### Backend Development (`Backend/`)
+```bash
+# Navigate to backend directory
+cd Backend
+
+# Create and activate virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Start development server (runs on localhost:8000)
+python main.py
+
+# Start with environment variables for testing
+TESTING=true JWT_SECRET_KEY=test_secret_key_for_testing python main.py
 ```
 
 ### Testing
+
+#### Frontend Tests
 ```bash
+cd Frontend/coach
+
 # Run all tests
 npm test
 
@@ -62,60 +117,162 @@ npm test:visual
 
 # Run e2e tests
 npm run test:e2e
+
+# Test development server connection
+npm run test:dev-server
+```
+
+#### Backend Tests
+```bash
+cd Backend
+
+# Run all tests
+python -m pytest
+
+# Run with verbose output
+python -m pytest -v
+
+# Run specific test file
+python -m pytest tests/test_auth_service.py -v
+
+# Run tests with coverage
+python -m pytest --cov=. --cov-report=html
+
+# Run with environment variables
+TESTING=true JWT_SECRET_KEY=test_secret_key_for_testing python -m pytest -v
 ```
 
 ### Linting & Code Quality
 ```bash
-# Lint code
+# Frontend linting
+cd Frontend/coach
 npm run lint
 
 # Reset project (removes example files)
 npm run reset-project
 ```
 
+### Full-Stack Development
+```bash
+# Start both frontend and backend simultaneously
+# Terminal 1: Backend
+cd Backend && python main.py
+
+# Terminal 2: Frontend  
+cd Frontend/coach && npm run dev
+
+# The frontend will connect to backend at localhost:8000
+# Frontend runs on localhost:8082 by default
+```
+
 ## Key Implementation Details
 
-### Store Initialization
+### Backend Architecture
+
+#### FastAPI Application Structure
+```
+Backend/
+├── main.py              # FastAPI application entry point
+├── core/
+│   └── config.py        # Environment configuration and settings
+├── models/
+│   └── auth.py          # Pydantic models for authentication
+├── services/
+│   ├── auth_service.py  # JWT token management and validation
+│   └── token_service.py # Token generation and refresh logic
+├── routers/
+│   ├── auth.py          # Authentication endpoints
+│   ├── workouts.py      # Workout CRUD endpoints
+│   ├── exercises.py     # Exercise library endpoints
+│   └── users.py         # User profile endpoints
+├── database/
+│   └── supabase.py      # Database connection and utilities
+└── tests/               # Comprehensive test suite
+```
+
+#### Authentication & Security
+- **JWT Authentication**: Access tokens (15 min) + Refresh tokens (7 days) with automatic rotation
+- **Row Level Security**: Supabase RLS policies ensure user data isolation
+- **CORS Configuration**: Configured for React Native development with proper origins
+- **Environment-based Configuration**: Separate configs for development, staging, and production
+
+#### API Integration
+- **React Query Integration**: Frontend uses React Query hooks for server state
+- **Automatic Token Refresh**: API client handles JWT refresh transparently
+- **Error Handling**: Custom APIError class with typed error categories
+- **Offline Support**: Frontend gracefully handles network errors with offline state
+
+### Frontend Architecture
+
+#### Store Initialization
 All Zustand stores must be initialized before use. The `StoreProvider` component handles this with:
 - Automatic store hydration from AsyncStorage
 - Loading states during initialization
 - Error handling for corrupt/missing data
+- Server synchronization via React Query integration
 
-### Authentication Flow
-- Guest mode vs signed-in state managed by `user-store`
-- `AuthWrapper` component controls app navigation based on auth state
-- Weight unit preferences are locked during active workouts
+#### Authentication Flow
+- **Full-Stack Authentication**: JWT tokens managed by backend, state by frontend
+- **Guest mode vs signed-in state** managed by `user-store`
+- **AuthWrapper** component controls app navigation based on auth state
+- **Token Management**: Automatic refresh and storage in secure storage
+- **Weight unit preferences** are locked during active workouts
 
-### Workout Management
-- Active workout sessions persist across app restarts
-- Exercise data includes weight, reps, sets, and notes
-- Workout history stored locally with exercise statistics
-- Weight unit conversion utilities for kg/lbs
+#### Workout Management
+- **Full-Stack CRUD**: Frontend uses React Query hooks to interact with backend API
+- **Real-time Synchronization**: Changes immediately sync with Supabase database
+- **Active workout sessions** persist across app restarts (both locally and server)
+- **Exercise data** includes weight, reps, sets, and notes with server validation
+- **Workout history** stored server-side with exercise statistics and analytics
+- **Weight unit conversion** utilities for kg/lbs with server preference sync
 
-### Theme System
+#### Theme System
 - HSL-based color system with CSS variables
 - Dark/light mode support via `useColorScheme` hook
 - Theme persistence through `theme-store`
 - NativeWind integration for responsive design
 
-### File-Based Routing (Expo Router)
+#### File-Based Routing (Expo Router)
 - `app/(tabs)/`: Main tabbed navigation
-- `app/(auth)/`: Authentication screens
+- `app/(auth)/`: Authentication screens  
 - `app/(modal)/`: Modal screens for adding exercises
-- Route protection handled by `AuthWrapper`
+- Route protection handled by `AuthWrapper` with server-side auth validation
 
 ## Testing Strategy
 
-- **Unit Tests**: Individual store methods and utility functions
-- **Integration Tests**: Store interactions and component integration
-- **Visual Tests**: Component rendering and styling
+### Frontend Testing (`Frontend/coach/`)
+- **Unit Tests**: Individual store methods and utility functions using Jest
+- **Integration Tests**: Store interactions and component integration with React Testing Library
+- **Visual Tests**: Component rendering and styling validation
 - **E2E Tests**: Full user workflows with Detox
+- **API Integration Tests**: Frontend-to-backend communication testing
 
-Critical test coverage includes:
-- Store state transitions and persistence
-- Authentication flow edge cases
-- Workout data validation and saving
-- Weight unit conversions
+Critical frontend test coverage includes:
+- Store state transitions and persistence (AsyncStorage + server sync)
+- Authentication flow edge cases (token refresh, network errors)
+- Workout data validation and saving (local + server validation)
+- Weight unit conversions with server synchronization
+- React Query hook behavior and error handling
+
+### Backend Testing (`Backend/`)
+- **Unit Tests**: Individual service methods and utilities using pytest
+- **Integration Tests**: Database interactions and API endpoint testing
+- **Authentication Tests**: JWT token generation, validation, and refresh logic
+- **Database Tests**: Supabase connection, RLS policies, and CRUD operations
+- **API Contract Tests**: Request/response validation and error handling
+
+Critical backend test coverage includes:
+- JWT token lifecycle (generation, validation, refresh, expiration)
+- Database connectivity and RLS policy enforcement
+- API endpoint security and user data isolation
+- Workout and exercise CRUD operations with validation
+- Error handling for authentication, validation, and database failures
+
+### Full-Stack Testing
+- **End-to-End Workflow Tests**: Complete user journeys from frontend through API to database
+- **Authentication Integration**: OAuth flow + JWT + database user creation
+- **Real-time Data Synchronization**: Frontend state sync with backend data changes
+- **Network Error Handling**: Offline/online state management and error recovery
 
 
 
@@ -225,19 +382,39 @@ When implementing UI features, verify:
 
 ## Development Notes
 
+### Frontend Development Notes
 - Use absolute imports with `@/` alias for cleaner imports
-- All stores include error handling and loading states
+- All Zustand stores include error handling and loading states
 - Debounced persistence prevents excessive AsyncStorage writes
+- React Query handles server state with automatic caching and revalidation
 - React 19 compatibility with overrides in package.json
 - TypeScript strict mode enabled with comprehensive type definitions
+- Environment switching available for local/development/staging/production
 
-## Working with the Dual Structure
+### Backend Development Notes  
+- FastAPI with automatic OpenAPI documentation at `/docs`
+- Environment variables managed through `.env` files (never commit `.env`)
+- JWT secret keys must be configured for development and production
+- Supabase connection requires proper environment configuration
+- Python virtual environment recommended for dependency isolation
+- pytest configuration includes coverage reporting and test database setup
+
+### Full-Stack Integration Notes
+- Frontend connects to backend via configurable API base URL
+- Android emulator uses `10.0.2.2` for localhost backend connections
+- CORS origins configured for all development environments
+- Authentication tokens automatically sync between frontend and backend
+- Database changes immediately reflect in frontend via React Query cache invalidation
+
+## Working with the Full-Stack Architecture
 
 When making changes:
-1. Primary development should happen at the root level
-2. `Frontend/coach/` contains enhanced features and may have different configurations
-3. Both versions share the same core architecture but may have different dependencies
-4. Test changes in both environments when modifying shared patterns
+1. **Frontend development** should happen in `Frontend/coach/` directory
+2. **Backend development** should happen in `Backend/` directory
+3. Both frontend and backend maintain separate test suites that should be run
+4. API changes require updating both backend endpoints and frontend React Query hooks
+5. Database schema changes should be tested with both backend tests and full-stack integration
+6. Environment configuration must be maintained in both frontend and backend
 
 ## Contribution Rules
 

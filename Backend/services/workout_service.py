@@ -54,20 +54,24 @@ class WorkoutService:
     
     def __init__(self, supabase_client: Optional['Client'] = None):
         """Initialize workout service with optional Supabase client."""
+        from services.supabase_client import SupabaseService
+        
         if supabase_client:
             self.supabase = supabase_client
+            # Create SupabaseService with the provided client
+            self.supabase_service = SupabaseService(supabase_client)
         else:
-            from services.supabase_client import SupabaseService
-            supabase_service = SupabaseService()
-            self.supabase = supabase_service.client
+            self.supabase_service = SupabaseService()
+            self.supabase = self.supabase_service.client
     
-    def create_workout(self, user_id: UUID, workout_data: CreateWorkoutRequest) -> WorkoutResponse:
+    def create_workout(self, user_id: UUID, workout_data: CreateWorkoutRequest, user_email: str = None) -> WorkoutResponse:
         """
         Create new workout session for authenticated user.
         
         Args:
             user_id: User's unique identifier
             workout_data: Workout creation data
+            user_email: User's email address (for user creation if needed)
             
         Returns:
             Created workout response
@@ -76,6 +80,21 @@ class WorkoutService:
             HTTPException: If workout creation fails
         """
         try:
+            # Ensure user exists in database before creating workout
+            if user_email:
+                logger.debug(f"Ensuring user exists: {user_id}")
+                
+                # Handle cases where supabase_service might not be initialized (backward compatibility)
+                if not hasattr(self, 'supabase_service') or self.supabase_service is None:
+                    logger.warning("SupabaseService not initialized, initializing now")
+                    from services.supabase_client import SupabaseService
+                    self.supabase_service = SupabaseService()
+                
+                self.supabase_service.get_or_create_user(
+                    user_id=user_id,
+                    email=user_email
+                )
+            
             # Prepare workout data for insertion
             workout_insert = {
                 "user_id": str(user_id),
@@ -105,6 +124,9 @@ class WorkoutService:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Database error during workout creation"
             )
+        except HTTPException:
+            # Re-raise HTTP exceptions from user creation
+            raise
         except Exception as e:
             logger.error(f"Unexpected error creating workout: {str(e)}")
             raise HTTPException(
