@@ -5,7 +5,6 @@
 
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
-import { Card, CardContent } from './ui/card';
 import { useRouter } from 'expo-router';
 import type { WorkoutExercise, Set } from '@/types/workout';
 import * as Haptics from 'expo-haptics';
@@ -17,8 +16,8 @@ interface ExerciseLogCardProps {
 // Exercise Icon Component
 function ExerciseIcon() {
   return (
-    <View className="w-12 h-12 justify-center items-center">
-      <Text className="text-2xl">🏋🏼‍♂️</Text>
+    <View className="w-12 h-12 bg-primary/10 rounded-full justify-center items-center">
+      <Text className="text-2xl">💪</Text>
     </View>
   );
 }
@@ -26,10 +25,8 @@ function ExerciseIcon() {
 // Edit Icon Component  
 function EditIcon() {
   return (
-    <View className="w-8 h-8 justify-center items-center">
-      <View className="w-4 h-4 justify-center items-center">
-        <Text className="text-muted.foreground text-xs">✏️</Text>
-      </View>
+    <View className="p-1 rounded-md">
+      <Text className="text-muted-foreground text-base">✏️</Text>
     </View>
   );
 }
@@ -37,9 +34,11 @@ function EditIcon() {
 // Top Bar with Exercise Name and Edit Button
 function TopBar({ 
   exerciseName, 
+  setsCount,
   onEdit 
 }: { 
   exerciseName: string;
+  setsCount: number;
   onEdit?: () => void;
 }) {
   const handleEditPress = () => {
@@ -48,12 +47,18 @@ function TopBar({
   };
 
   return (
-    <View className="flex-row items-center gap-2 w-full">
-      <View className="flex-row items-center gap-2 flex-1">
+    <View className="flex-row items-center gap-4 w-full">
+      <View className="flex-row items-center gap-4 flex-1">
         <ExerciseIcon />
         <View className="flex-1">
-          <Text className="text-base font-semibold text-foreground leading-6">
+          <Text 
+            className="text-lg font-medium text-foreground"
+            numberOfLines={2}
+          >
             {exerciseName}
+          </Text>
+          <Text className="text-muted-foreground text-sm">
+            {setsCount} sets completed
           </Text>
         </View>
       </View>
@@ -61,7 +66,7 @@ function TopBar({
       <TouchableOpacity 
         onPress={handleEditPress}
         activeOpacity={0.7}
-        className="w-8 h-8 justify-center items-center"
+        className="p-1 rounded-md"
       >
         <EditIcon />
       </TouchableOpacity>
@@ -78,62 +83,59 @@ function Divider() {
 
 // Data Table Component
 function DataTable({ sets }: { sets: Set[] }) {
-  const maxRows = Math.max(sets.length, 4);
-  const paddedSets: Set[] = [...sets];
-  
-  // Pad with empty sets to ensure minimum 4 rows
-  while (paddedSets.length < maxRows) {
-    paddedSets.push({ set: "", weight: "", reps: "", notes: "" });
+  if (sets.length === 0) {
+    return (
+      <View className="items-center py-8">
+        <Text className="text-muted-foreground">
+          No sets recorded for this exercise
+        </Text>
+      </View>
+    );
   }
 
   return (
     <View className="w-full">
       {/* Header Row */}
-      <View className="flex-row justify-between items-center mb-2">
-        <View className="w-[18px] items-center">
-          <Text className="text-xs text-muted.foreground font-normal tracking-wider">
-            SET
-          </Text>
+      <View className="flex-row mb-2 px-1">
+        <View className="w-8">
+          <Text className="text-muted-foreground text-xs font-medium">SET</Text>
         </View>
-        <View className="w-[30px] items-center">
-          <Text className="text-xs text-muted.foreground font-normal tracking-wider">
-            WGT
-          </Text>
+        <View className="w-16">
+          <Text className="text-muted-foreground text-xs font-medium text-center">WGT</Text>
         </View>
-        <View className="w-[35px] items-center">
-          <Text className="text-xs text-muted.foreground font-normal tracking-wider">
-            REPS
-          </Text>
+        <View className="w-16">
+          <Text className="text-muted-foreground text-xs font-medium text-center">REPS</Text>
         </View>
-        <View className="w-[195px] items-start">
-          <Text className="text-xs text-muted.foreground font-normal tracking-wider">
-            Notes
-          </Text>
+        <View className="flex-1 ml-4">
+          <Text className="text-muted-foreground text-xs font-medium">NOTES</Text>
         </View>
       </View>
 
       {/* Data Rows */}
       <View className="gap-2">
-        {paddedSets.map((set, index) => (
-          <View key={index} className="flex-row justify-between items-center">
-            <View className="w-[18px] items-center">
-              <Text className="text-xs text-foreground">
-                {set.set}
+        {sets.map((set, index) => (
+          <View key={index} className="flex-row items-center px-1 py-2">
+            <View className="w-8">
+              <Text className="text-muted-foreground text-sm text-center">
+                {index + 1}
               </Text>
             </View>
-            <View className="w-[30px] items-center">
-              <Text className="text-xs text-foreground">
-                {set.weight}
+            <View className="w-16">
+              <Text className="text-foreground text-sm text-center font-medium">
+                {set.weight || '-'}
               </Text>
             </View>
-            <View className="w-[35px] items-center">
-              <Text className="text-xs text-foreground">
-                {set.reps}
+            <View className="w-16">
+              <Text className="text-foreground text-sm text-center font-medium">
+                {set.reps || '-'}
               </Text>
             </View>
-            <View className="w-[195px] items-start">
-              <Text className="text-xs text-foreground" numberOfLines={1}>
-                {set.notes}
+            <View className="flex-1 ml-4">
+              <Text 
+                className="text-foreground text-sm"
+                numberOfLines={2}
+              >
+                {set.notes || '-'}
               </Text>
             </View>
           </View>
@@ -143,9 +145,11 @@ function DataTable({ sets }: { sets: Set[] }) {
   );
 }
 
+
 // Main ExerciseLogCard Component
 export function ExerciseLogCard({ exercise }: ExerciseLogCardProps) {
   const router = useRouter();
+  const sets = exercise.sets || [];
 
   const handleEdit = () => {
     // Navigate to exercise detail screen for editing
@@ -160,19 +164,18 @@ export function ExerciseLogCard({ exercise }: ExerciseLogCardProps) {
   };
 
   return (
-    <Card className="w-full bg-background" variant="default">
-      <CardContent className="p-4">
-        <View className="gap-4">
-          <TopBar 
-            exerciseName={exercise.name} 
-            onEdit={handleEdit}
-          />
-          
-          <Divider />
-          
-          <DataTable sets={exercise.sets || []} />
-        </View>
-      </CardContent>
-    </Card>
+    <View className="bg-card border border-border rounded-xl p-6 mb-4">
+      <TopBar 
+        exerciseName={exercise.name}
+        setsCount={sets.length}
+        onEdit={handleEdit}
+      />
+      
+      <Divider />
+      
+      <View className="mt-4">
+        <DataTable sets={sets} />
+      </View>
+    </View>
   );
 }
