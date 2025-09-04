@@ -111,7 +111,8 @@ describe('Environment Configuration', () => {
       const url = getBaseURL();
 
       expect(url).toBe('http://localhost:8000');
-      expect(mockWarn).toHaveBeenCalledWith('No production API URL configured, using localhost');
+      expect(mockWarn).toHaveBeenCalledWith('No production API URL configured in EXPO_PUBLIC_API_URL, using localhost. ' +
+        'Set EXPO_PUBLIC_API_URL in your environment configuration (.env files)');
 
       mockWarn.mockRestore();
     });

@@ -31,6 +31,10 @@ describe('API Client Configuration', () => {
     jest.clearAllMocks();
     jest.resetModules();
     
+    // Clear require cache for our api-client module
+    delete require.cache[require.resolve('../../services/api-client')];
+    delete require.cache[require.resolve('expo-constants')];
+    
     // Reset mock state
     mockExpoConfig.extra = {};
     global.__DEV__ = true;
@@ -158,7 +162,8 @@ describe('API Client Configuration', () => {
       const baseURL = getBaseURL();
       
       expect(baseURL).toBe('http://localhost:8000');
-      expect(mockWarn).toHaveBeenCalledWith('No production API URL configured, using localhost');
+      expect(mockWarn).toHaveBeenCalledWith('No production API URL configured in EXPO_PUBLIC_API_URL, using localhost. ' +
+        'Set EXPO_PUBLIC_API_URL in your environment configuration (.env files)');
 
       mockWarn.mockRestore();
     });
@@ -195,13 +200,8 @@ describe('API Client Configuration', () => {
         EXPO_PUBLIC_API_URL: 'https://api.fm-setlogger.com' 
       };
 
-      // Clear module cache to ensure fresh getBaseURL call
-      delete require.cache[require.resolve('../../services/api-client')];
-      delete require.cache[require.resolve('expo-constants')];
-
-      const { APIClient, getBaseURL } = require('../../services/api-client');
-      const baseURL = getBaseURL();
-      const client = new APIClient(baseURL);
+      const { APIClient } = require('../../services/api-client');
+      const client = new APIClient();
 
       expect(client.baseURL).toBe('https://api.fm-setlogger.com');
     });
@@ -213,10 +213,6 @@ describe('API Client Configuration', () => {
       mockExpoConfig.extra = { 
         EXPO_PUBLIC_API_URL: 'https://custom-api.example.com' 
       };
-
-      // Clear module cache to ensure fresh getBaseURL call
-      delete require.cache[require.resolve('../../services/api-client')];
-      delete require.cache[require.resolve('expo-constants')];
       
       const { getBaseURL } = require('../../services/api-client');
       const baseURL = getBaseURL();

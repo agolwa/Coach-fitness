@@ -18,33 +18,45 @@ import Constants from 'expo-constants';
 // ============================================================================
 
 const getBaseURL = (): string => {
+  // Get environment-configured URL first
+  const configuredURL = Constants.expoConfig?.extra?.EXPO_PUBLIC_API_URL;
+  
   // Development configuration
   if (__DEV__) {
-    // For iOS Simulator and Android Emulator
-    if (Platform.OS === 'ios') {
-      return 'http://localhost:8000';
+    // Use configured URL if available, otherwise use defaults
+    const baseURL = configuredURL || 'http://localhost:8000';
+    
+    // Critical: Android emulator requires localhost transformation to 10.0.2.2
+    if (Platform.OS === 'android' && baseURL.includes('localhost')) {
+      return baseURL.replace('localhost', '10.0.2.2');
     }
-    // For Android - use 10.0.2.2 for emulator, localhost for device
-    if (Platform.OS === 'android') {
-      return 'http://10.0.2.2:8000';
+    
+    // iOS and web can use the URL as-is (including localhost)
+    if (Platform.OS === 'ios' || Platform.OS === 'web') {
+      return baseURL;
     }
-    // Fallback for web
-    return 'http://localhost:8000';
+    
+    // Fallback for other platforms
+    return baseURL;
   }
   
-  // Production configuration
-  const productionURL = Constants.expoConfig?.extra?.EXPO_PUBLIC_API_URL;
-  if (productionURL) {
-    return productionURL;
+  // Production configuration - use environment variable
+  if (configuredURL) {
+    return configuredURL;
   }
   
-  // Fallback
-  console.warn('No production API URL configured, using localhost');
+  // Fallback with improved error message
+  console.warn('No production API URL configured in EXPO_PUBLIC_API_URL, using localhost. ' +
+    'Set EXPO_PUBLIC_API_URL in your environment configuration (.env files)');
   return 'http://localhost:8000';
 };
 
-const BASE_URL = getBaseURL();
 const API_TIMEOUT = 10000; // 10 seconds
+
+// Get base URL dynamically to support testing and environment changes
+const getBaseURLDynamic = (): string => {
+  return getBaseURL();
+};
 
 // ============================================================================
 // TypeScript Interfaces (matching backend Pydantic models)
@@ -280,12 +292,17 @@ class TokenManager {
 // ============================================================================
 
 export class APIClient {
-  private baseURL: string;
+  private _baseURL: string;
   private timeout: number;
 
-  constructor(baseURL: string = BASE_URL, timeout: number = API_TIMEOUT) {
-    this.baseURL = baseURL;
+  constructor(baseURL?: string, timeout: number = API_TIMEOUT) {
+    this._baseURL = baseURL || getBaseURLDynamic();
     this.timeout = timeout;
+  }
+  
+  // Getter to access baseURL for testing
+  get baseURL(): string {
+    return this._baseURL;
   }
 
   // Core HTTP request method with interceptors
@@ -293,7 +310,7 @@ export class APIClient {
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
-    const url = `${this.baseURL}${endpoint}`;
+    const url = `${this._baseURL}${endpoint}`;
     
     // Add authorization header if token exists
     const accessToken = await TokenManager.getAccessToken();
@@ -385,7 +402,7 @@ export class APIClient {
       const refreshToken = await TokenManager.getRefreshToken();
       if (!refreshToken) return false;
 
-      const response = await fetch(`${this.baseURL}/auth/refresh`, {
+      const response = await fetch(`${this._baseURL}/auth/refresh`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -572,7 +589,7 @@ export async function shouldWorkOffline(timeout: number = 3000): Promise<boolean
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeout);
     
-    const response = await fetch(`${BASE_URL}/health`, {
+    const response = await fetch(`${getBaseURLDynamic()}/health`, {
       method: 'GET',
       signal: controller.signal,
       headers: {
