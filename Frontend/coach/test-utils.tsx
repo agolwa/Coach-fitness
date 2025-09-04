@@ -43,6 +43,9 @@ export * from '@testing-library/react-native';
 // Override render method
 export { customRender as render };
 
+// Test wrapper factory
+export const createTestWrapper = () => AllTheProviders;
+
 // Test utilities
 export const createMockNavigation = () => ({
   navigate: jest.fn(),

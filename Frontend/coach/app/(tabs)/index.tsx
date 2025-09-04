@@ -23,6 +23,7 @@ import { TodaysLog } from '@/components/TodaysLog';
 import { useWorkoutStore } from '@/stores/workout-store';
 import { useUserStore } from '@/stores/user-store';
 import { useTheme } from '@/hooks/use-theme';
+import { useNetwork } from '@/hooks/use-network';
 import { router } from 'expo-router';
 import { WORKOUT_CONSTANTS } from '@/types/workout';
 import { 
@@ -38,6 +39,10 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
   const { authState, isSignedIn } = useUserStore();
+  const { isOnline, isOffline, connectionType, hasStrongConnection } = useNetwork();
+  
+  // Extract colors for easier access
+  const colors = theme.colors;
   
   // Local Zustand store for offline functionality
   const {
@@ -137,6 +142,7 @@ export default function HomeScreen() {
     }
   };
 
+
   // Handle add exercises navigation with workout creation
   const handleAddExercises = async () => {
     console.log('Add exercises button pressed');
@@ -157,12 +163,32 @@ export default function HomeScreen() {
         
       } catch (error) {
         console.error('Failed to create server workout:', error);
-        // Continue with local workout creation
-        Alert.alert(
-          'Offline Mode',
-          'Working offline. Your workout will sync when connection is restored.',
-          [{ text: 'Continue' }]
+        
+        // Check if this is a network error - if so, continue gracefully
+        const isNetworkError = error instanceof Error && (
+          error.message.includes('fetch') ||
+          error.message.includes('network') ||
+          (error as any).errorCode === 'NETWORK_ERROR'
         );
+        
+        if (isNetworkError && isOffline) {
+          // Don't show error for network issues when offline - just continue
+          console.log('Network error while offline - continuing with local workout');
+        } else if (isNetworkError) {
+          // Show gentle network error message
+          Alert.alert(
+            'Connection Issue',
+            'Unable to sync with server. Your workout will be saved locally.',
+            [{ text: 'OK' }]
+          );
+        } else {
+          // Show error for non-network issues
+          Alert.alert(
+            'Error Creating Workout',
+            'There was an issue creating your workout. Please try again.',
+            [{ text: 'OK' }]
+          );
+        }
       } finally {
         setIsCreatingWorkout(false);
       }
@@ -341,6 +367,30 @@ export default function HomeScreen() {
   return (
     <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
       
+      {/* Offline Banner */}
+      {isOffline && (
+        <View className="bg-orange-500 px-4 py-2">
+          <View className="flex-row items-center justify-center gap-2">
+            <Ionicons name="wifi-outline" size={16} color="white" />
+            <Text className="text-white text-sm font-medium">
+              Working offline - changes will sync when connection is restored
+            </Text>
+          </View>
+        </View>
+      )}
+
+      {/* Poor Connection Banner */}
+      {isOnline && !hasStrongConnection && (
+        <View className="bg-yellow-500 px-4 py-2">
+          <View className="flex-row items-center justify-center gap-2">
+            <Ionicons name="cellular-outline" size={16} color="white" />
+            <Text className="text-white text-sm font-medium">
+              Slow connection - some features may be limited
+            </Text>
+          </View>
+        </View>
+      )}
+      
       <ScrollView 
         className="flex-1"
         keyboardShouldPersistTaps="handled"
@@ -372,11 +422,13 @@ export default function HomeScreen() {
               value={workoutTitle}
               onChangeText={handleWorkoutTitleChange}
               placeholder="Enter workout name..."
-              placeholderTextColor={theme.colors.muted.foreground}
-              className="text-lg font-medium text-foreground border-b border-muted.foreground pb-2"
+              placeholderTextColor={colors.muted.foreground}
+              className="text-lg font-medium border-b pb-2"
               style={{
-                color: theme.colors.foreground,
-                borderBottomColor: theme.colors.muted.foreground,
+                color: '#000000',
+                borderBottomColor: colors.muted.foreground,
+                fontSize: 18,
+                fontWeight: '500',
               }}
               maxLength={MAX_TITLE_LENGTH}
               returnKeyType="done"
@@ -401,6 +453,7 @@ export default function HomeScreen() {
                 isLoadingWorkout ? 'opacity-70' : ''
               }`}
               disabled={isLoadingWorkout}
+              testID="add-exercises-button"
             >
               {isLoadingWorkout ? (
                 <>
@@ -411,7 +464,7 @@ export default function HomeScreen() {
                 </>
               ) : (
                 <>
-                  <Ionicons name="add" size={20} color={theme.colors.primary.foreground} />
+                  <Ionicons name="add" size={20} color={colors.primary.foreground} />
                   <Text className="text-primary-foreground font-medium ml-2">
                     Add Exercise
                   </Text>

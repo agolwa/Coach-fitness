@@ -116,12 +116,12 @@ export default function SignupScreen() {
       let errorMessage = 'Something went wrong. Please try again.';
       
       if (error instanceof APIError) {
-        if (error.isNetworkError()) {
-          errorMessage = 'Network error. Please check your connection and try again.';
-        } else if (error.isServerError()) {
+        if (error.isServerError()) {
           errorMessage = 'Server error. Please try again later.';
         } else if (error.status === 400) {
           errorMessage = 'Invalid Google authentication. Please try signing in again.';
+        } else if (error.status === 0) {
+          errorMessage = 'Network error. Please check your connection and try again.';
         }
       }
       

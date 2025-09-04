@@ -1,5 +1,8 @@
 /**
  * @jest-environment jsdom
+ */
+
+/**
  * Phase 5.6 Integration Tests
  * 
  * Comprehensive end-to-end integration tests for:

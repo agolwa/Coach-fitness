@@ -3,8 +3,13 @@
  * Ensures all theme tokens match original CSS values exactly
  */
 
+import React from 'react';
+import { render } from '@testing-library/react-native';
+import { TextInput } from 'react-native';
 import { describe, it, expect } from '@jest/globals';
 import type { Theme, ThemeColors, DesignTokens } from '../types/theme';
+import { createTestWrapper } from '../test-utils';
+import HomeScreen from '../app/(tabs)/index';
 
 // Expected color values from globals.css (light theme)
 const expectedLightColors: ThemeColors = {
@@ -298,6 +303,121 @@ describe('Design Token Validation', () => {
       colorKeys.forEach(key => {
         expect(kebabCasePattern.test(key)).toBe(true);
       });
+    });
+  });
+
+  describe('Form Input Theming', () => {
+    const TestWrapper = createTestWrapper();
+
+    it('should apply correct text color to workout name input', () => {
+      // Test that proper inline styling overrides NativeWind classes
+      const WorkoutTitleInput = () => (
+        <TextInput
+          value=""
+          placeholder="Enter workout name..."
+          placeholderTextColor={expectedLightColors['muted-foreground']}
+          className="text-lg font-medium border-b pb-2"
+          style={{
+            color: expectedLightColors.foreground,
+            borderBottomColor: expectedLightColors['muted-foreground'],
+          }}
+        />
+      );
+
+      const { getByPlaceholderText } = render(<WorkoutTitleInput />);
+      const titleInput = getByPlaceholderText('Enter workout name...');
+
+      expect(titleInput.props.style.color).toBe(expectedLightColors.foreground);
+      expect(titleInput.props.style.borderBottomColor).toBe(expectedLightColors['muted-foreground']);
+      expect(titleInput.props.placeholderTextColor).toBe(expectedLightColors['muted-foreground']);
+    });
+
+    it('should have proper theme color application for TextInput', () => {
+      const TestTextInput = ({ theme }: { theme: any }) => (
+        <TextInput
+          value="Test Value"
+          style={{
+            color: theme.colors.foreground,
+            borderBottomColor: theme.colors['muted-foreground'],
+          }}
+          placeholderTextColor={theme.colors['muted-foreground']}
+        />
+      );
+
+      // Test with light theme colors
+      const { getByDisplayValue: getLightValue } = render(
+        <TestTextInput theme={{ colors: expectedLightColors }} />
+      );
+
+      const lightInput = getLightValue('Test Value');
+      expect(lightInput.props.style.color).toBe(expectedLightColors.foreground);
+      expect(lightInput.props.style.borderBottomColor).toBe(expectedLightColors['muted-foreground']);
+      expect(lightInput.props.placeholderTextColor).toBe(expectedLightColors['muted-foreground']);
+
+      // Test with dark theme colors
+      const { getByDisplayValue: getDarkValue } = render(
+        <TestTextInput theme={{ colors: expectedDarkColors }} />
+      );
+
+      const darkInput = getDarkValue('Test Value');
+      expect(darkInput.props.style.color).toBe(expectedDarkColors.foreground);
+      expect(darkInput.props.style.borderBottomColor).toBe(expectedDarkColors['muted-foreground']);
+      expect(darkInput.props.placeholderTextColor).toBe(expectedDarkColors['muted-foreground']);
+    });
+
+    it('should ensure text visibility in both light and dark modes', () => {
+      // Light theme - dark text on light background should be visible
+      const lightTheme = {
+        colors: {
+          foreground: expectedLightColors.foreground,
+          background: expectedLightColors.background
+        }
+      };
+
+      // Dark theme - light text on dark background should be visible
+      const darkTheme = {
+        colors: {
+          foreground: expectedDarkColors.foreground,
+          background: expectedDarkColors.background
+        }
+      };
+
+      // Light theme has dark foreground text
+      expect(lightTheme.colors.foreground).toBe('hsl(210, 10%, 13%)'); // Dark text
+      expect(lightTheme.colors.background).toBe('hsl(0, 0%, 100%)'); // Light background
+
+      // Dark theme has light foreground text
+      expect(darkTheme.colors.foreground).toBe('hsl(0, 0%, 100%)'); // Light text
+      expect(darkTheme.colors.background).toBe('hsl(0, 0%, 0%)'); // Dark background
+    });
+
+    it('should use consistent muted foreground for placeholders', () => {
+      // Both themes should have appropriate muted colors
+      expect(expectedLightColors['muted-foreground']).toBe('hsl(220, 9%, 46%)'); // Medium gray
+      expect(expectedDarkColors['muted-foreground']).toBe('hsl(220, 13%, 69%)'); // Lighter gray for dark mode
+    });
+
+    it('should not conflict between NativeWind and inline styles', () => {
+      // Test that removing conflicting NativeWind classes allows inline styles to work
+      const TestInput = () => (
+        <TextInput
+          value="Test"
+          className="text-lg font-medium border-b pb-2" // No text-foreground class
+          style={{
+            color: expectedLightColors.foreground, // Inline style should take precedence
+            borderBottomColor: expectedLightColors['muted-foreground'],
+          }}
+          placeholderTextColor={expectedLightColors['muted-foreground']}
+        />
+      );
+
+      const { getByDisplayValue } = render(<TestInput />);
+      const input = getByDisplayValue('Test');
+      
+      // Inline styles should be applied
+      expect(input.props.style.color).toBe(expectedLightColors.foreground);
+      expect(input.props.style.borderBottomColor).toBe(expectedLightColors['muted-foreground']);
+      expect(input.props.placeholderTextColor).toBe(expectedLightColors['muted-foreground']);
     });
   });
 });

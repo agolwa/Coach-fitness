@@ -21,6 +21,7 @@ import { Ionicons } from '@expo/vector-icons';
 // Stores and hooks
 import { useUserStore } from '@/stores/user-store';
 import { useTheme } from '@/hooks/use-theme';
+import { useNetwork } from '@/hooks/use-network';
 import { 
   useUserProfile, 
   useUpdateUserProfile, 
@@ -43,6 +44,7 @@ export default function ProfileScreen() {
   } = useUserStore();
 
   const { colorScheme, toggleColorScheme } = useTheme();
+  const { isOnline, isOffline, isNetworkError } = useNetwork();
 
   // React Query hooks for server-synced data
   const { 
@@ -67,7 +69,13 @@ export default function ProfileScreen() {
   const getDisplayEmail = () => {
     if (!isSignedIn) return 'Sign up to save your workouts';
     if (profileLoading) return 'Loading profile...';
-    if (profileError) return 'Failed to load profile data';
+    if (profileError) {
+      // Check if it's a network error
+      if (isOffline || (profileError && isNetworkError(profileError))) {
+        return 'Working offline - profile data unavailable';
+      }
+      return 'Unable to load profile';
+    }
     return userProfile?.email || 'No email available';
   };
 
@@ -325,8 +333,17 @@ export default function ProfileScreen() {
                       </>
                     ) : profileError ? (
                       <>
-                        <Ionicons name="alert-circle" size={16} color="#ef4444" />
-                        <Text className="text-destructive text-xs">Offline</Text>
+                        <Ionicons 
+                          name={isOffline ? "wifi-outline" : "alert-circle"} 
+                          size={16} 
+                          color={isOffline ? "#f59e0b" : "#ef4444"} 
+                        />
+                        <Text className={`text-xs ${isOffline ? 'text-yellow-600' : 'text-red-600'}`}>
+                          {isOffline || (profileError && isNetworkError(profileError)) ? 
+                            'Working offline' : 
+                            'Error loading profile'
+                          }
+                        </Text>
                       </>
                     ) : (
                       <>
@@ -337,11 +354,6 @@ export default function ProfileScreen() {
                   </View>
                 )}
               </View>
-              {profileError && isSignedIn && (
-                <Text className="text-muted-foreground text-sm mt-2">
-                  Using offline data. Changes will sync when connection is restored.
-                </Text>
-              )}
             </View>
 
             {/* Weight Unit Preference */}

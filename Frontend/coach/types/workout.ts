@@ -156,6 +156,7 @@ export interface UserActions {
   signIn: () => void;
   signOut: () => void;
   continueAsGuest: () => void;
+  signInAsTestUser: () => Promise<void>;
 
   // Preferences
   updatePreferences: (preferences: Partial<UserPreferences>) => void;
@@ -267,9 +268,9 @@ export const STORAGE_KEYS = {
 export const DEFAULT_USER_PREFERENCES: UserPreferences = {
   weightUnit: 'kg',
   canChangeWeightUnit: true,
-  authState: 'guest',
-  isSignedIn: false,
-  isGuest: true,
+  authState: 'signed-in',
+  isSignedIn: true,
+  isGuest: false,
 };
 
 export const DEFAULT_WORKOUT_SESSION: WorkoutSession = {

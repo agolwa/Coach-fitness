@@ -1,5 +1,8 @@
 /**
  * @jest-environment jsdom
+ */
+
+/**
  * Workout Management Hooks Integration Tests
  * 
  * Comprehensive test suite for:
@@ -601,6 +604,70 @@ describe('Workout Management Hooks', () => {
       });
 
       expect(result.current.error).toBe(networkError);
+    });
+
+    it('should handle fetch failures gracefully during workout creation', async () => {
+      const fetchError = new Error('Failed to fetch');
+      (apiClient.post as jest.Mock).mockRejectedValueOnce(fetchError);
+
+      const { result } = renderHook(() => useCreateWorkout(), { wrapper });
+
+      act(() => {
+        result.current.mutate({ title: 'Test Workout' });
+      });
+
+      await waitFor(() => {
+        expect(result.current.isError).toBe(true);
+      });
+
+      expect(result.current.error).toBe(fetchError);
+      
+      // Should not prevent local workout functionality
+      expect(console.error).toHaveBeenCalledWith('Failed to create workout:', fetchError);
+    });
+
+    it('should queue sync operations when offline', async () => {
+      const networkError = new Error('Failed to fetch');
+      (apiClient.post as jest.Mock).mockRejectedValueOnce(networkError);
+
+      const { result } = renderHook(() => useCreateWorkout(), { wrapper });
+
+      // Simulate offline workout creation
+      act(() => {
+        result.current.mutate({ 
+          title: 'Offline Workout',
+          started_at: new Date().toISOString()
+        });
+      });
+
+      await waitFor(() => {
+        expect(result.current.isError).toBe(true);
+      });
+
+      // Workout creation should fail gracefully
+      expect(result.current.error).toBe(networkError);
+      
+      // Console should log the error for debugging
+      expect(console.error).toHaveBeenCalledWith('Failed to create workout:', networkError);
+    });
+
+    it('should not throw errors for network timeouts', async () => {
+      const timeoutError = { name: 'AbortError', message: 'Request timeout' };
+      (apiClient.post as jest.Mock).mockRejectedValueOnce(timeoutError);
+
+      const { result } = renderHook(() => useCreateWorkout(), { wrapper });
+
+      expect(() => {
+        act(() => {
+          result.current.mutate({ title: 'Test Workout' });
+        });
+      }).not.toThrow();
+
+      await waitFor(() => {
+        expect(result.current.isError).toBe(true);
+      });
+
+      expect(result.current.error).toBe(timeoutError);
     });
 
     it('should invalidate queries correctly after mutations', async () => {

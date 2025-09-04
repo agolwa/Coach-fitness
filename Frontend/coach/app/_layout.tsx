@@ -24,10 +24,23 @@ const queryClient = new QueryClient({
       refetchOnWindowFocus: false,
       // Refetch on reconnect
       refetchOnReconnect: true,
+      // Network mode: always try to fetch, but don't suspend when offline
+      networkMode: 'online',
+      // Custom retry function to handle network errors differently
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
     },
     mutations: {
       // Retry failed mutations once
-      retry: 1,
+      retry: (failureCount, error) => {
+        // Don't retry network errors more than once
+        if (error?.name === 'NetworkError' || error?.message?.includes('fetch')) {
+          return failureCount < 1;
+        }
+        // Retry other errors up to 2 times
+        return failureCount < 2;
+      },
+      // Network mode for mutations - queue them when offline
+      networkMode: 'online',
     },
   },
 });

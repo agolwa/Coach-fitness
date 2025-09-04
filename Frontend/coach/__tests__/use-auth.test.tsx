@@ -1,5 +1,8 @@
 /**
  * @jest-environment jsdom
+ */
+
+/**
  * Authentication Hooks Integration Tests
  * 
  * Comprehensive test suite for:

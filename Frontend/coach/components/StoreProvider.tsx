@@ -40,7 +40,7 @@ export function StoreProvider({ children }: StoreProviderProps) {
           loadExercises?.() || Promise.resolve(),
           initializeWorkout?.() || Promise.resolve(),
           initializeNavigation?.() || Promise.resolve(),
-        ]).then(() => {
+        ]).then(async () => {
           console.log('All stores initialized successfully');
         }).catch((error) => {
           console.warn('Some stores failed to initialize:', error);

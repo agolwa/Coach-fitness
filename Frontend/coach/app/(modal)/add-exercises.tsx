@@ -20,7 +20,7 @@ import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 
 import { useExerciseStore } from '@/stores/exercise-store';
-import { useExercises, useExerciseBodyParts, useExerciseEquipment, useOfflineExercises } from '@/hooks/use-exercises';
+import { useExercises, useExerciseBodyParts, useExerciseEquipment } from '@/hooks/use-exercises';
 import { useWorkoutStore } from '@/stores/workout-store';
 import { useUserStore } from '@/stores/user-store';
 import { useTheme } from '@/hooks/use-theme';
@@ -68,13 +68,14 @@ export default function AddExercisesScreen() {
     limit: 1000, // Load large batch for better UX
   };
 
-  // Use offline-first approach with server sync
+  // Load exercises from server
   const {
-    exercises: serverExercises,
+    data: exercisesResponse,
     isLoading: serverLoading,
-    isOffline,
     error: serverError
-  } = useOfflineExercises();
+  } = useExercises(exerciseFilters);
+
+  const serverExercises = exercisesResponse?.exercises || [];
 
   // Load body parts and equipment for dropdowns
   const { data: bodyParts, isLoading: bodyPartsLoading } = useExerciseBodyParts();
@@ -523,10 +524,10 @@ export default function AddExercisesScreen() {
         <View className="flex-1 items-center justify-center px-6">
           <ActivityIndicator size="large" color={theme.colors.primary} />
           <Text className="text-muted.foreground mt-4 text-center">
-            {isOffline ? 'Loading from local database...' : 'Loading exercise database...'}
+            Loading exercise database...
           </Text>
           <Text className="text-muted.foreground text-sm text-center mt-2">
-            {isOffline ? 'Working offline' : 'Please wait a moment'}
+            Please wait a moment
           </Text>
         </View>
       </View>
@@ -541,7 +542,7 @@ export default function AddExercisesScreen() {
           <Ionicons name="warning" size={48} color={theme.colors.muted.foreground} />
           <Text className="text-foreground text-lg font-semibold mt-4 text-center">No Exercises Available</Text>
           <Text className="text-muted.foreground text-center mt-2">
-            {isOffline ? 'Unable to load exercises offline.' : 'Unable to load the exercise database.'}
+            Unable to load the exercise database.
           </Text>
           <TouchableOpacity
             onPress={() => router.back()}
@@ -692,9 +693,6 @@ export default function AddExercisesScreen() {
             ) : (
               `${exercises.length} exercises`
             )}
-            {isOffline && (
-              <Text className="text-yellow-600 text-xs mt-1">• Working offline</Text>
-            )}
           </Text>
           
           {filteredExercises.length > 0 && (
@@ -784,7 +782,7 @@ export default function AddExercisesScreen() {
       {(exerciseStore.error || serverError) && (
         <View className="absolute top-20 left-4 right-4 bg-destructive p-3 rounded-lg">
           <Text className="text-destructive-foreground text-center">
-            {serverError?.message || exerciseStore.error || 'An error occurred'}
+            {serverError?.detail || serverError?.toString() || exerciseStore.error || 'An error occurred'}
           </Text>
           <TouchableOpacity
             onPress={() => {

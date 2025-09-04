@@ -130,10 +130,6 @@ export function useExercises(filters: ExerciseFilters = {}) {
     },
     onError: (error: APIError) => {
       console.error('Failed to fetch exercises:', error);
-      
-      // Fallback to local data if server is unavailable
-      const { loadExercises } = useExerciseStore.getState();
-      loadExercises(); // Load from local storage/cache
     },
   });
 }
@@ -347,35 +343,6 @@ export function useExerciseFiltering() {
   };
 }
 
-/**
- * Hook for offline/online exercise management
- */
-export function useOfflineExercises() {
-  const { loadExercises, exercises, isLoading: localLoading } = useExerciseStore();
-  
-  // Load from server if online, fallback to local if offline
-  const { 
-    data: serverExercises, 
-    isLoading: serverLoading, 
-    error 
-  } = useExercises({ limit: 1000 }); // Load a large batch for offline use
-
-  const isOffline = !!error && (error as APIError).isNetworkError();
-  const shouldUseLocal = isOffline || !serverExercises;
-
-  useEffect(() => {
-    if (shouldUseLocal && exercises.length === 0) {
-      loadExercises(); // Load from local storage
-    }
-  }, [shouldUseLocal, exercises.length, loadExercises]);
-
-  return {
-    exercises: shouldUseLocal ? exercises : serverExercises?.exercises || [],
-    isLoading: shouldUseLocal ? localLoading : serverLoading,
-    isOffline,
-    error,
-  };
-}
 
 // Export types for external use
 export type {

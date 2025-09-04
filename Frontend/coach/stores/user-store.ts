@@ -17,6 +17,7 @@ import {
   DEFAULT_USER_PREFERENCES,
 } from '../types/workout';
 import { apiClient, TokenManager, type UserResponse } from '../services/api-client';
+import CryptoJS from 'crypto-js';
 
 // Constants
 const USER_STORAGE_KEY = STORAGE_KEYS.USER_PREFERENCES;
@@ -199,6 +200,86 @@ export const useUserStore = create<UserStore>()(
       debouncedPersist(fullState as UserPreferences);
     },
 
+    // Development helper - auto-login for testing
+    signInAsTestUser: async () => {
+      const state = get();
+      
+      try {
+        // Create a valid JWT token using the backend's secret key
+        const jwtSecret = 'test_super_secret_jwt_key_for_authentication_tests_32_chars_min';
+        const now = Math.floor(Date.now() / 1000);
+        const exp = now + 3600; // 1 hour expiry
+        
+        const header = {
+          alg: 'HS256',
+          typ: 'JWT'
+        };
+        
+        const payload = {
+          sub: 'test-user-123',
+          email: 'test@example.com',
+          iat: now,
+          exp: exp
+        };
+        
+        const encodedHeader = btoa(JSON.stringify(header)).replace(/[+/=]/g, (match) => {
+          return { '+': '-', '/': '_', '=': '' }[match] || match;
+        });
+        
+        const encodedPayload = btoa(JSON.stringify(payload)).replace(/[+/=]/g, (match) => {
+          return { '+': '-', '/': '_', '=': '' }[match] || match;
+        });
+        
+        const data = `${encodedHeader}.${encodedPayload}`;
+        
+        // Create HMAC-SHA256 signature
+        const hmac = CryptoJS.HmacSHA256(data, jwtSecret);
+        const signature = hmac.toString(CryptoJS.enc.Base64url);
+        
+        const jwtToken = `${data}.${signature}`;
+        
+        await TokenManager.setTokens({
+          access_token: jwtToken,
+          token_type: 'bearer',
+          expires_in: 3600,
+        });
+        
+        const newPreferences = {
+          authState: 'signed-in' as AuthState,
+          isSignedIn: true,
+          isGuest: false,
+          lastUpdated: new Date(),
+        };
+
+        set(newPreferences);
+        
+        const fullState = { ...state, ...newPreferences };
+        delete (fullState as any).isLoading;
+        delete (fullState as any).error;
+        delete (fullState as any).lastUpdated;
+        
+        debouncedPersist(fullState as UserPreferences);
+        
+        console.log('🚀 Development: Auto-signed in with valid JWT token');
+      } catch (error) {
+        console.error('Failed to create development JWT token:', error);
+        // Fall back to previous method if JWT creation fails
+        const mockHeader = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
+        const mockPayload = btoa(JSON.stringify({ 
+          sub: 'test-user-123',
+          email: 'test@example.com', 
+          exp: Math.floor(Date.now() / 1000) + 3600 
+        }));
+        const mockSignature = btoa('dev-signature');
+        const mockToken = `${mockHeader}.${mockPayload}.${mockSignature}`;
+        await TokenManager.setTokens({
+          access_token: mockToken,
+          token_type: 'bearer',
+          expires_in: 3600,
+        });
+      }
+    },
+
     // Preference management
     updatePreferences: (preferences: Partial<UserPreferences>) => {
       const state = get();
@@ -261,6 +342,12 @@ export const useUserStore = create<UserStore>()(
         isInitializing = true;
         set({ isLoading: true, error: null });
 
+        // Clear stored preferences in development mode to ensure fresh signed-in state
+        if (__DEV__) {
+          console.log('🧹 Development: Clearing stored user preferences for fresh state');
+          await AsyncStorage.removeItem(USER_STORAGE_KEY);
+        }
+
         const storedPreferences = await AsyncStorage.getItem(USER_STORAGE_KEY);
         
         if (storedPreferences) {
@@ -297,6 +384,13 @@ export const useUserStore = create<UserStore>()(
             isLoading: false,
           });
         }
+        
+        // In development mode, automatically sign in as test user
+        if (__DEV__) {
+          console.log('🚀 Development: Auto-signing in test user during initialization');
+          await get().signInAsTestUser();
+        }
+        
       } catch (error) {
         console.warn('Failed to initialize user preferences from storage:', error);
         set({
@@ -304,6 +398,15 @@ export const useUserStore = create<UserStore>()(
           error: 'Failed to load user preferences',
           isLoading: false,
         });
+        
+        // Even if initialization failed, try to sign in as test user in development
+        if (__DEV__) {
+          try {
+            await get().signInAsTestUser();
+          } catch (signInError) {
+            console.warn('Development: Failed to auto-sign in after init error:', signInError);
+          }
+        }
       } finally {
         isInitializing = false;
       }

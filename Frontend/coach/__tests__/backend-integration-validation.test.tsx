@@ -1,5 +1,8 @@
 /**
  * @jest-environment jsdom
+ */
+
+/**
  * Backend Integration Validation Tests
  * 
  * Comprehensive validation of all backend endpoints:

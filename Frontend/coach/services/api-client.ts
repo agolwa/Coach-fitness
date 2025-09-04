@@ -352,10 +352,28 @@ export class APIClient {
         throw new APIError('Request timeout', 408, 'TIMEOUT');
       }
       
+      // Check if this is a network error inline
+      const errorMessage = error.message?.toLowerCase() || '';
+      const isNetError = 
+        errorMessage.includes('failed to fetch') ||
+        errorMessage.includes('network error') ||
+        errorMessage.includes('network request failed') ||
+        error.name === 'TypeError' && errorMessage.includes('network') ||
+        error.name === 'NetworkError';
+      
+      if (isNetError) {
+        throw new APIError(
+          'Unable to connect to server. Please check your internet connection.',
+          0,
+          'NETWORK_ERROR',
+          error
+        );
+      }
+      
       throw new APIError(
-        'Network error occurred',
+        'An unexpected error occurred',
         0,
-        'NETWORK_ERROR',
+        'UNKNOWN_ERROR',
         error
       );
     }
@@ -457,9 +475,6 @@ export class APIError extends Error {
   }
 
   // Helper methods for common error types
-  isNetworkError(): boolean {
-    return this.errorCode === 'NETWORK_ERROR' || this.status === 0;
-  }
 
   isAuthenticationError(): boolean {
     return this.status === 401 || this.errorCode === 'AUTH_EXPIRED';
@@ -472,6 +487,14 @@ export class APIError extends Error {
   isServerError(): boolean {
     return this.status >= 500;
   }
+
+  isNetworkError(): boolean {
+    return this.errorCode === 'NETWORK_ERROR' || this.errorCode === 'TIMEOUT';
+  }
+
+  isConnectionError(): boolean {
+    return this.isNetworkError() || this.status === 0;
+  }
 }
 
 // ============================================================================
@@ -480,6 +503,109 @@ export class APIError extends Error {
 
 export const apiClient = new APIClient();
 export { TokenManager };
+
+;
+
+// ============================================================================
+// Network Detection & Offline Mode Utilities
+// ============================================================================
+
+/**
+ * Checks if an error is a network-related error
+ * @param error - The error to check
+ * @returns true if the error is network-related, false otherwise
+ */
+export function isNetworkError(error: any): boolean {
+  if (!error) return false;
+  
+  // Check for common network error patterns
+  const networkErrorPatterns = [
+    'Failed to fetch',
+    'Network error occurred',
+    'Network request failed',
+    'Request timeout',
+    'Connection failed',
+    'ERR_NETWORK',
+    'ERR_INTERNET_DISCONNECTED',
+    'NETWORK_ERROR',
+  ];
+
+  // Check error message
+  if (typeof error.message === 'string') {
+    const message = error.message.toLowerCase();
+    if (networkErrorPatterns.some(pattern => message.includes(pattern.toLowerCase()))) {
+      return true;
+    }
+  }
+
+  // Check error name/type
+  if (error.name === 'TypeError' && error.message?.includes('Network')) {
+    return true;
+  }
+  
+  if (error.name === 'AbortError') {
+    return true;
+  }
+
+  // Check error code
+  if (error.errorCode === 'NETWORK_ERROR' || error.errorCode === 'TIMEOUT') {
+    return true;
+  }
+
+  // Check if it's a fetch-related error
+  if (error instanceof Error && error.message.includes('fetch')) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Determines if the app should work in offline mode by checking connectivity
+ * @param timeout - Timeout for the connectivity check in milliseconds
+ * @returns Promise that resolves to true if offline, false if online
+ */
+export async function shouldWorkOffline(timeout: number = 3000): Promise<boolean> {
+  try {
+    // Create a simple health check request to our backend
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+    
+    const response = await fetch(`${BASE_URL}/health`, {
+      method: 'GET',
+      signal: controller.signal,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    clearTimeout(timeoutId);
+    
+    // If we get a response (even if it's an error), we're online
+    return !response.ok && response.status >= 500;
+  } catch (error) {
+    // Any error (network, timeout, abort) means we should work offline
+    return true;
+  }
+}
+
+/**
+ * Gets the current network status
+ * @returns Promise that resolves to network status info
+ */
+export async function getNetworkStatus(): Promise<{
+  isOnline: boolean;
+  isOffline: boolean;
+  lastChecked: Date;
+}> {
+  const isOffline = await shouldWorkOffline();
+  
+  return {
+    isOnline: !isOffline,
+    isOffline,
+    lastChecked: new Date(),
+  };
+}
 
 // Export types for use in other files
 export type * from './api-client';

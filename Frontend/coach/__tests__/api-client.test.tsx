@@ -1,5 +1,8 @@
 /**
  * @jest-environment jsdom
+ */
+
+/**
  * API Client Integration Tests
  * 
  * Comprehensive test suite for:
