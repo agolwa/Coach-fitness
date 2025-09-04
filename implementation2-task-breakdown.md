@@ -721,6 +721,468 @@ describe('Production Readiness', () => {
 
 ---
 
+# PHASE 5.3.1: ENHANCED AUTHENTICATION WITH REFRESH TOKENS
+**Duration**: 2-3 days | **Priority**: Critical | **Dependencies**: Phase 5.3 Complete
+
+## Overview
+Enhance the existing authentication system with refresh token support using a stateless JWT-based approach with enhanced security features and proper environment-based configuration. This addresses the original developer's concerns while providing a production-ready authentication system.
+
+### Task 1: Implement Backend Refresh Token Infrastructure
+
+#### 1.1 Extend Configuration (Backend/core/config.py)
+**Estimated Time**: 1 hour | **Priority**: Critical | **Risk**: Low
+
+##### Test-First Requirements
+```python
+# Write first: Backend/tests/test_enhanced_config.py
+def test_refresh_token_configuration():
+    """Test refresh token configuration validation"""
+    from core.config import settings
+    
+    # Test refresh token expiration configured
+    assert settings.jwt_refresh_token_expire_days > 0
+    
+    # Test separate secret key for refresh tokens
+    assert settings.jwt_refresh_token_secret_key is not None
+    assert settings.jwt_refresh_token_secret_key != settings.jwt_secret_key
+```
+
+##### Implementation Steps
+1. **Test First**: Write refresh token configuration tests
+2. Add `jwt_refresh_token_expire_days: int = 7` to Settings class
+3. Add `jwt_refresh_token_secret_key: Optional[str] = None` with validation
+4. Update field validators to require separate secrets for security
+5. Add environment variable documentation
+
+##### Success Criteria
+- [ ] Refresh token expiration configurable (7-30 days)
+- [ ] Separate secret key for refresh tokens validated
+- [ ] Configuration tests pass
+- [ ] Environment variables documented
+
+---
+
+#### 1.2 Create Token Service Layer (NEW: Backend/services/token_service.py)
+**Estimated Time**: 4-5 hours | **Priority**: Critical | **Risk**: Medium
+
+##### Test-First Requirements
+```python
+# Write first: Backend/tests/test_token_service.py
+def test_generate_token_pair():
+    """Test token pair generation with different expiration times"""
+    from services.token_service import TokenService
+    
+    token_service = TokenService()
+    user_id = uuid4()
+    email = "test@example.com"
+    
+    token_pair = token_service.generate_token_pair(user_id, email)
+    
+    assert token_pair.access_token is not None
+    assert token_pair.refresh_token is not None
+    assert token_pair.access_expires_in == 1800  # 30 minutes
+    assert token_pair.refresh_expires_in == 604800  # 7 days
+
+def test_refresh_token_rotation():
+    """Test token rotation security"""
+    token_service = TokenService()
+    
+    # Generate initial tokens
+    original_pair = token_service.generate_token_pair(uuid4(), "test@example.com")
+    
+    # Refresh tokens
+    new_pair = token_service.rotate_refresh_token(original_pair.refresh_token)
+    
+    # Old refresh token should be invalidated
+    assert new_pair.refresh_token != original_pair.refresh_token
+    
+    # Attempting to use old refresh token should fail
+    with pytest.raises(HTTPException):
+        token_service.verify_refresh_token(original_pair.refresh_token)
+```
+
+##### Implementation Steps
+1. **Test First**: Write comprehensive token service tests
+2. Create `TokenService` class with dependency injection
+3. Implement `generate_token_pair()` method
+4. Implement `verify_refresh_token()` with different validation rules
+5. Implement `rotate_refresh_token()` for security
+6. Add `extract_token_metadata()` for token inspection
+7. Create token family tracking for rotation detection
+
+##### Success Criteria
+- [ ] Token pair generation functional
+- [ ] Refresh token validation separate from access tokens
+- [ ] Token rotation prevents refresh token reuse
+- [ ] Token family tracking implemented
+- [ ] Comprehensive test coverage (15+ tests)
+
+---
+
+### Task 2: Update Authentication Models and Endpoints
+
+#### 2.1 Extend Auth Models (Backend/models/auth.py)
+**Estimated Time**: 1 hour | **Priority**: High | **Risk**: Low
+
+##### Test-First Requirements
+```python
+# Write first: Backend/tests/test_enhanced_auth_models.py
+def test_token_pair_response_model():
+    """Test new token response models"""
+    from models.auth import TokenPairResponse
+    
+    response = TokenPairResponse(
+        access_token="access_token_here",
+        refresh_token="refresh_token_here",
+        access_expires_in=1800,
+        refresh_expires_in=604800
+    )
+    
+    assert response.token_type == "bearer"
+    assert response.access_expires_in > 0
+    assert response.refresh_expires_in > response.access_expires_in
+```
+
+##### Implementation Steps
+1. **Test First**: Write model validation tests
+2. Add `TokenPairResponse` with access and refresh tokens
+3. Add `RefreshRequest` model for refresh endpoint
+4. Update existing `LoginResponse` to include refresh tokens
+5. Maintain backward compatibility
+
+##### Success Criteria
+- [ ] New response models created
+- [ ] Frontend TypeScript compatibility maintained
+- [ ] Backward compatibility preserved
+- [ ] Model validation tests pass
+
+---
+
+#### 2.2 Update Existing Login Endpoints (Backend/routers/auth.py)
+**Estimated Time**: 3-4 hours | **Priority**: Critical | **Risk**: Medium
+
+##### Test-First Requirements
+```python
+# Write first: Backend/tests/test_enhanced_auth_endpoints.py
+def test_login_returns_refresh_token():
+    """Test login endpoints return both access and refresh tokens"""
+    response = client.post("/auth/login", json={
+        "email": "test@example.com",
+        "password": "password123"
+    })
+    
+    assert response.status_code == 200
+    data = response.json()
+    
+    # Should include both tokens
+    assert "access_token" in data
+    assert "refresh_token" in data
+    assert data["access_expires_in"] > 0
+    assert data["refresh_expires_in"] > data["access_expires_in"]
+
+def test_google_oauth_returns_refresh_token():
+    """Test Google OAuth returns token pair"""
+    response = client.post("/auth/google", json={
+        "google_jwt": "mock_google_token"
+    })
+    
+    assert response.status_code == 200
+    data = response.json()
+    assert "refresh_token" in data
+```
+
+##### Implementation Steps
+1. **Test First**: Write enhanced endpoint tests
+2. Update `/auth/login` to use TokenService
+3. Update `/auth/google` to use TokenService
+4. Modify response structure to include refresh tokens
+5. Maintain backward compatibility for existing clients
+6. Update error handling for token generation failures
+
+##### Success Criteria
+- [ ] Login endpoints return refresh tokens
+- [ ] Google OAuth returns token pairs
+- [ ] Backward compatibility maintained
+- [ ] Enhanced tests pass (10+ test cases)
+
+---
+
+### Task 3: Implement Refresh Endpoint with Security
+
+#### 3.1 Create Refresh Endpoint (Backend/routers/auth.py)
+**Estimated Time**: 3-4 hours | **Priority**: Critical | **Risk**: High
+
+##### Test-First Requirements
+```python
+# Write first: Backend/tests/test_refresh_endpoint.py
+def test_refresh_token_success():
+    """Test successful token refresh"""
+    # Login to get tokens
+    login_response = client.post("/auth/login", json={
+        "email": "test@example.com", "password": "password123"
+    })
+    refresh_token = login_response.json()["refresh_token"]
+    
+    # Refresh tokens
+    refresh_response = client.post("/auth/refresh", json={
+        "refresh_token": refresh_token
+    })
+    
+    assert refresh_response.status_code == 200
+    new_tokens = refresh_response.json()
+    
+    # Should receive new token pair
+    assert new_tokens["access_token"] != login_response.json()["access_token"]
+    assert new_tokens["refresh_token"] != refresh_token
+
+def test_refresh_token_rotation():
+    """Test old refresh token becomes invalid after use"""
+    # Get initial tokens and refresh
+    refresh_token = get_refresh_token()
+    client.post("/auth/refresh", json={"refresh_token": refresh_token})
+    
+    # Old refresh token should fail
+    response = client.post("/auth/refresh", json={"refresh_token": refresh_token})
+    assert response.status_code == 401
+```
+
+##### Implementation Steps
+1. **Test First**: Write comprehensive refresh endpoint tests
+2. Create `POST /auth/refresh` endpoint
+3. Implement refresh token validation
+4. Add token rotation security
+5. Implement token family tracking
+6. Add rate limiting (5 requests per minute)
+7. Create comprehensive error handling
+
+##### Success Criteria
+- [ ] Refresh endpoint functional
+- [ ] Token rotation prevents reuse
+- [ ] Rate limiting implemented
+- [ ] Comprehensive error handling
+- [ ] Security tests pass (8+ test cases)
+
+---
+
+### Task 4: Frontend Environment Configuration Enhancement
+
+#### 4.1 Create Environment Configuration Files
+**Estimated Time**: 1-2 hours | **Priority**: High | **Risk**: Low
+
+##### Test-First Requirements
+```typescript
+// Write first: __tests__/config/environment.test.js
+describe('Environment Configuration', () => {
+  it('should load development environment variables', () => {
+    process.env.NODE_ENV = 'development';
+    const config = require('../../app.config.js');
+    
+    expect(config.default.expo.extra.EXPO_PUBLIC_API_URL).toBeDefined();
+  });
+  
+  it('should handle Android emulator URL transformation', () => {
+    const { getBaseURL } = require('../../services/api-client');
+    
+    // Mock Android platform (primary testing platform)
+    jest.mock('react-native/Libraries/Utilities/Platform', () => ({
+      OS: 'android'
+    }));
+    
+    const url = getBaseURL();
+    expect(url).toContain('10.0.2.2'); // Android emulator requires 10.0.2.2 for localhost
+  });
+  
+  it('should handle iOS simulator URL when needed', () => {
+    const { getBaseURL } = require('../../services/api-client');
+    
+    // Mock iOS platform for completeness
+    jest.mock('react-native/Libraries/Utilities/Platform', () => ({
+      OS: 'ios'
+    }));
+    
+    const url = getBaseURL();
+    expect(url).toContain('localhost'); // iOS can use localhost directly
+  });
+});
+```
+
+##### Implementation Steps
+1. **Test First**: Write environment configuration tests
+2. Create `.env.local` for local development
+3. Create `.env.staging` for staging environment
+4. Create `.env.production` for production environment
+5. Create/update `app.config.js` for proper Expo env loading
+6. Add npm scripts for environment switching
+
+##### Files to Create/Update
+- `Frontend/coach/.env.local`
+- `Frontend/coach/.env.staging`
+- `Frontend/coach/.env.production`
+- `Frontend/coach/app.config.js`
+- Update `Frontend/coach/package.json` with environment scripts
+
+##### Success Criteria
+- [ ] Multiple environment files created
+- [ ] Expo configuration properly loads environment variables
+- [ ] Environment switching scripts added
+- [ ] Configuration tests pass
+
+---
+
+#### 4.2 Refactor API Client URL Configuration
+**Estimated Time**: 2-3 hours | **Priority**: High | **Risk**: Medium
+
+##### Test-First Requirements
+```typescript
+// Write first: __tests__/services/api-client-config.test.tsx
+describe('API Client Configuration', () => {
+  it('should use environment variable for production API URL', () => {
+    // Mock production environment variable
+    Constants.expoConfig = {
+      extra: { EXPO_PUBLIC_API_URL: 'https://api.fm-setlogger.com' }
+    };
+    
+    const client = new APIClient();
+    expect(client.baseURL).toBe('https://api.fm-setlogger.com');
+  });
+  
+  it('should handle Android emulator localhost transformation for development', () => {
+    // Primary testing scenario - Android emulator development
+    Platform.OS = 'android';
+    Constants.expoConfig = {
+      extra: { EXPO_PUBLIC_API_URL: 'http://localhost:8000' }
+    };
+    
+    const client = new APIClient();
+    expect(client.baseURL).toBe('http://10.0.2.2:8000');
+  });
+  
+  it('should validate Android emulator URL works with backend connection', async () => {
+    // Integration test for Android emulator connectivity
+    Platform.OS = 'android';
+    const client = new APIClient();
+    
+    // Mock successful health check
+    const mockResponse = { status: 'healthy' };
+    jest.spyOn(client, 'get').mockResolvedValue(mockResponse);
+    
+    const health = await client.get('/health');
+    expect(health.status).toBe('healthy');
+    expect(client.baseURL).toContain('10.0.2.2');
+  });
+});
+```
+
+##### Implementation Steps
+1. **Test First**: Write API client configuration tests with Android emulator focus
+2. Update `getBaseURL()` function to use environment variables with Android emulator priority
+3. **Critical**: Preserve Android emulator localhost → 10.0.2.2 transformation
+4. Add error handling for missing configuration with Android-specific error messages
+5. Update TokenManager for new refresh token handling
+6. **Primary**: Test Android emulator compatibility thoroughly
+7. **Secondary**: Ensure iOS simulator compatibility for completeness
+
+##### Success Criteria
+- [ ] Environment-based URL configuration working on Android emulator
+- [ ] **Critical**: Android emulator localhost → 10.0.2.2 transformation preserved
+- [ ] Error handling for missing config with clear Android emulator guidance
+- [ ] **Primary**: Android emulator testing passes (development workflow)
+- [ ] **Secondary**: iOS simulator compatibility maintained (backup platform)
+- [ ] No hardcoded URLs remaining
+- [ ] Backend connectivity validated on Android emulator
+
+---
+
+### Task 5: Security and Monitoring Implementation
+
+#### 5.1 Add Token Audit Logging
+**Estimated Time**: 2-3 hours | **Priority**: Medium | **Risk**: Low
+
+##### Implementation Steps
+1. Create middleware to log token events
+2. Log token generation, refresh, and validation events
+3. Add suspicious pattern detection
+4. Create audit trail for security monitoring
+5. Implement rate limiting for refresh endpoint
+
+##### Success Criteria
+- [ ] Comprehensive logging implemented
+- [ ] Suspicious pattern detection
+- [ ] Audit trail functional
+- [ ] Rate limiting active
+
+---
+
+### Task 6: Testing and Validation
+
+#### 6.1 Comprehensive Test Suite
+**Estimated Time**: 3-4 hours | **Priority**: High | **Risk**: Medium
+
+##### Test Coverage Requirements
+```python
+# Backend tests to implement:
+- test_token_service.py (15+ tests)
+- test_enhanced_auth_endpoints.py (12+ tests)  
+- test_refresh_endpoint.py (8+ tests)
+- test_enhanced_config.py (5+ tests)
+- test_security_audit.py (6+ tests)
+
+# Frontend tests to implement:
+- environment.test.js (5+ tests)
+- api-client-config.test.tsx (8+ tests)
+- token-refresh-integration.test.tsx (10+ tests)
+```
+
+##### Success Criteria
+- [ ] 95%+ test coverage achieved
+- [ ] All integration scenarios tested
+- [ ] Error scenarios covered
+- [ ] Performance benchmarks met
+
+---
+
+### Implementation Timeline
+
+**Day 1-2: Backend Infrastructure**
+- Configure refresh token settings
+- Implement TokenService with comprehensive testing
+- Update authentication models
+
+**Day 3-4: Endpoint Enhancement** 
+- Update existing login endpoints
+- Implement /auth/refresh endpoint
+- Add comprehensive security features
+
+**Day 5: Frontend Configuration**
+- Create environment configuration system with Android emulator focus
+- Update API client for environment-based URLs with 10.0.2.2 transformation
+- Implement environment switching with Android emulator validation
+
+**Day 6: Security and Testing**
+- Add audit logging and monitoring
+- Complete comprehensive test suite with Android emulator integration tests
+- Perform security validation and Android emulator end-to-end testing
+
+### Risk Mitigation
+
+**High Risk: Token Security**
+- Implement token rotation to prevent reuse
+- Use separate secret keys for different token types
+- Add rate limiting to prevent abuse
+
+**Medium Risk: Frontend Environment Config**
+- **Critical**: Maintain Android emulator functionality (primary development platform)
+- Preserve Android emulator localhost → 10.0.2.2 transformation
+- Provide clear migration path with Android emulator setup instructions
+- Ensure backend connectivity works reliably on Android emulator
+
+**Low Risk: Testing Coverage**
+- Implement comprehensive test scenarios
+- Cover all error conditions
+- Validate performance requirements
+
+---
+
 # USER STORIES WITH ACCEPTANCE CRITERIA
 
 ## Epic: User Workout Management

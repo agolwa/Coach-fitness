@@ -1,15 +1,14 @@
 /**
- * SignupScreen - Real Backend Authentication Integration
+ * SignupScreen - Supabase Authentication Integration
  * 
- * Integrates with backend API for Google OAuth authentication:
- * - Uses real Google OAuth flow via expo-auth-session
- * - Authenticates with backend using Google tokens
- * - Handles JWT token storage and management automatically
- * - Provides comprehensive error handling for network/server issues
+ * Integrates with Supabase Auth for Google OAuth authentication:
+ * - Uses Supabase Auth for Google OAuth flow
+ * - Handles user session management automatically via Supabase
+ * - Provides comprehensive error handling for authentication issues
  * - Maintains existing UI patterns and user experience flows
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -21,16 +20,10 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import * as WebBrowser from 'expo-web-browser';
-import * as Google from 'expo-auth-session/providers/google';
 import { useUserStore } from '@/stores/user-store';
 import { useThemeColors } from '@/hooks/use-theme';
-import { useGoogleAuth } from '@/hooks/use-auth';
-import { APIError } from '@/services/api-client';
+import { auth } from '@/services/supabase';
 import * as Haptics from 'expo-haptics';
-
-// Complete WebBrowser authentication
-WebBrowser.maybeCompleteAuthSession();
 
 const { width } = Dimensions.get('window');
 
@@ -48,110 +41,56 @@ function GoogleIcon({ size = 20 }: GoogleIconProps) {
 
 export default function SignupScreen() {
   const insets = useSafeAreaInsets();
-  const { continueAsGuest } = useUserStore();
+  const { continueAsGuest, signIn } = useUserStore();
   const colors = useThemeColors();
   const [isSigningIn, setIsSigningIn] = useState(false);
-  
-  // React Query hook for Google authentication
-  const googleAuthMutation = useGoogleAuth();
 
-  // Configure Google OAuth
-  const [request, response, promptAsync] = Google.useAuthRequest({
-    // TODO: Replace with actual Google OAuth client ID from Google Cloud Console
-    // For development: Add your OAuth client ID here
-    clientId: '123456789-abcdef.apps.googleusercontent.com',
-    scopes: ['profile', 'email'],
-  });
+  // Listen to auth state changes
+  useEffect(() => {
+    const { data: { subscription } } = auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state changed:', event, session?.user?.email);
+      
+      if (event === 'SIGNED_IN' && session?.user) {
+        // User successfully signed in via Supabase Auth
+        console.log('User signed in:', {
+          id: session.user.id,
+          email: session.user.email,
+          name: session.user.user_metadata?.full_name || session.user.user_metadata?.name,
+        });
+        
+        // Update auth state in user store
+        signIn();
+        
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        router.replace('/(tabs)');
+      } else if (event === 'SIGNED_OUT') {
+        console.log('User signed out');
+      }
+    });
 
-  React.useEffect(() => {
-    if (response?.type === 'success') {
-      const { authentication } = response;
-      handleAuthenticationSuccess(authentication);
-    } else if (response?.type === 'error') {
-      console.error('OAuth error:', response.error);
-      Alert.alert(
-        'Sign In Failed',
-        'There was an error signing in with Google. Please try again.',
-        [{ text: 'OK' }]
-      );
-      setIsSigningIn(false);
-    } else if (response?.type === 'cancel') {
-      console.log('OAuth cancelled by user');
-      setIsSigningIn(false);
-    }
-  }, [response]);
-
-  // Cleanup effect to handle component unmounting during auth
-  React.useEffect(() => {
-    return () => {
-      // Reset signing in state if component unmounts
-      setIsSigningIn(false);
-    };
+    return () => subscription.unsubscribe();
   }, []);
 
-  const handleAuthenticationSuccess = async (authentication: any) => {
-    try {
-      console.log('Google authentication successful, contacting backend...');
-      
-      // Extract tokens from Google authentication
-      const googleToken = authentication.accessToken;
-      const googleJWT = authentication.idToken;
-      
-      if (!googleToken) {
-        throw new Error('No Google access token received');
-      }
-      
-      // Authenticate with backend using Google tokens
-      await googleAuthMutation.mutateAsync({
-        token: googleToken,
-        google_jwt: googleJWT || '', // JWT might not be available in all flows
-      });
-      
-      // Success handled by useGoogleAuth hook's onSuccess callback
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      router.replace('/(tabs)');
-    } catch (error) {
-      console.error('Backend authentication error:', error);
-      
-      let errorMessage = 'Something went wrong. Please try again.';
-      
-      if (error instanceof APIError) {
-        if (error.isServerError()) {
-          errorMessage = 'Server error. Please try again later.';
-        } else if (error.status === 400) {
-          errorMessage = 'Invalid Google authentication. Please try signing in again.';
-        } else if (error.status === 0) {
-          errorMessage = 'Network error. Please check your connection and try again.';
-        }
-      }
-      
-      Alert.alert(
-        'Sign In Failed',
-        errorMessage,
-        [{ text: 'OK' }]
-      );
-    } finally {
-      setIsSigningIn(false);
-    }
-  };
-
   const handleGoogleSignup = async () => {
-    if (isSigningIn || googleAuthMutation.isPending) return;
+    if (isSigningIn) return;
     
     setIsSigningIn(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     
     try {
-      console.log('Initiating Google OAuth flow...');
+      console.log('Initiating Supabase Google OAuth flow...');
       
-      // Trigger real Google OAuth flow
-      await promptAsync();
+      const { data, error } = await auth.signInWithGoogle();
       
-      // Authentication result will be handled by the useEffect hook above
-      // which calls handleAuthenticationSuccess on success
+      if (error) {
+        throw error;
+      }
+      
+      console.log('Google OAuth initiated successfully');
+      // The auth state change listener will handle the success case
       
     } catch (error) {
-      console.error('OAuth prompt error:', error);
+      console.error('Supabase OAuth error:', error);
       
       let errorMessage = 'Unable to start sign in process. Please try again.';
       
@@ -162,6 +101,8 @@ export default function SignupScreen() {
           // User cancelled, just reset state without showing error
           setIsSigningIn(false);
           return;
+        } else if (error.message.includes('popup')) {
+          errorMessage = 'Please allow popups and try again.';
         }
       }
       
@@ -307,7 +248,7 @@ export default function SignupScreen() {
           }}>
             <TouchableOpacity
               onPress={handleGoogleSignup}
-              disabled={isSigningIn || googleAuthMutation.isPending}
+              disabled={isSigningIn}
               style={{
                 width: '100%',
                 backgroundColor: colors.card.DEFAULT,
@@ -320,11 +261,11 @@ export default function SignupScreen() {
                 alignItems: 'center',
                 justifyContent: 'center',
                 marginBottom: 12,
-                opacity: (isSigningIn || googleAuthMutation.isPending) ? 0.6 : 1
+                opacity: isSigningIn ? 0.6 : 1
               }}
               activeOpacity={0.8}
             >
-              {(isSigningIn || googleAuthMutation.isPending) ? (
+              {isSigningIn ? (
                 <ActivityIndicator 
                   size="small" 
                   color={colors.foreground} 
@@ -339,11 +280,9 @@ export default function SignupScreen() {
                 fontSize: 16,
                 marginLeft: 12
               }}>
-                {googleAuthMutation.isPending 
-                  ? 'Authenticating...' 
-                  : isSigningIn 
-                    ? 'Signing in...' 
-                    : 'Continue with Google'
+                {isSigningIn 
+                  ? 'Signing in...' 
+                  : 'Continue with Google'
                 }
               </Text>
             </TouchableOpacity>
@@ -351,7 +290,7 @@ export default function SignupScreen() {
             {/* Try without signup button */}
             <TouchableOpacity
               onPress={handleTryWithoutSignup}
-              disabled={isSigningIn || googleAuthMutation.isPending}
+              disabled={isSigningIn}
               style={{
                 width: '100%',
                 backgroundColor: 'transparent',
@@ -363,7 +302,7 @@ export default function SignupScreen() {
                 flexDirection: 'row',
                 alignItems: 'center',
                 justifyContent: 'center',
-                opacity: (isSigningIn || googleAuthMutation.isPending) ? 0.6 : 1
+                opacity: isSigningIn ? 0.6 : 1
               }}
               activeOpacity={0.8}
             >

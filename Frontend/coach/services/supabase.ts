@@ -87,6 +87,18 @@ export const auth = {
   },
 
   /**
+   * Sign in with Google OAuth
+   */
+  async signInWithGoogle(options?: { redirectTo?: string }) {
+    return await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: options?.redirectTo
+      }
+    })
+  },
+
+  /**
    * Listen to auth state changes
    */
   onAuthStateChange(callback: (event: string, session: Session | null) => void) {
