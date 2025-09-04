@@ -112,6 +112,27 @@ class TokenResponse(BaseModel):
     refresh_token: Optional[str] = Field(None, description="JWT refresh token")
 
 
+class TokenPairResponse(BaseModel):
+    """Enhanced token pair response for Phase 5.3.1 refresh token implementation."""
+    access_token: str = Field(..., description="JWT access token")
+    refresh_token: str = Field(..., description="JWT refresh token")
+    access_expires_in: int = Field(..., description="Access token expiration in seconds")
+    refresh_expires_in: int = Field(..., description="Refresh token expiration in seconds")
+    token_type: str = Field(default="bearer", description="Token type")
+
+
+class RefreshRequest(BaseModel):
+    """Request model for token refresh endpoint."""
+    refresh_token: str = Field(..., description="JWT refresh token to exchange")
+
+    @field_validator('refresh_token')
+    @classmethod
+    def validate_refresh_token_not_empty(cls, v):
+        if not v or not v.strip():
+            raise ValueError("Refresh token cannot be empty")
+        return v.strip()
+
+
 class LoginResponse(BaseModel):
     """Complete authentication response model."""
     access_token: str = Field(..., description="JWT access token")

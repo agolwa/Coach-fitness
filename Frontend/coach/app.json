@@ -7,7 +7,7 @@
     "icon": "./assets/images/icon.png",
     "scheme": "coach",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.anonymous.coach"
@@ -42,11 +42,6 @@
     },
     "runtimeVersion": {
       "policy": "appVersion"
-    },
-    "extra": {
-      "eas": {
-        "projectId": "coach-fm-setlogger"
-      }
     }
   }
 }

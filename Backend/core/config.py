@@ -6,7 +6,7 @@ Handles environment variable loading with validation and error handling.
 import os
 from typing import Optional
 from pydantic_settings import BaseSettings
-from pydantic import field_validator
+from pydantic import field_validator, model_validator
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -25,6 +25,10 @@ class Settings(BaseSettings):
     jwt_secret_key: Optional[str] = None
     jwt_algorithm: str = "HS256"
     jwt_access_token_expire_minutes: int = 30
+    
+    # Refresh Token Configuration (Phase 5.3.1 Enhancement)
+    jwt_refresh_token_expire_days: int = 7
+    jwt_refresh_token_secret_key: Optional[str] = None
     
     # Database Configuration
     database_url: Optional[str] = None
@@ -78,6 +82,40 @@ class Settings(BaseSettings):
             if not testing_mode:
                 raise ValueError("JWT_SECRET_KEY is required - missing environment variable")
         return v
+    
+    @field_validator('jwt_refresh_token_expire_days')
+    @classmethod
+    def validate_refresh_token_expire_days(cls, v):
+        if v <= 0:
+            raise ValueError("jwt_refresh_token_expire_days must be greater than 0")
+        if v > 30:
+            raise ValueError("jwt_refresh_token_expire_days must be less than or equal to 30")
+        if v < 7:
+            raise ValueError("jwt_refresh_token_expire_days must be at least 7 days for security")
+        return v
+    
+    @field_validator('jwt_refresh_token_secret_key')
+    @classmethod
+    def validate_refresh_token_secret_key(cls, v):
+        if v and v == "your_refresh_token_secret_key_example":
+            testing_mode = os.getenv("TESTING") == "true" or os.getenv("PYTEST_CURRENT_TEST")
+            if not testing_mode:
+                raise ValueError("JWT_REFRESH_TOKEN_SECRET_KEY example value not allowed in production")
+        if v and len(v) < 32:
+            raise ValueError("jwt_refresh_token_secret_key must be at least 32 characters")
+        if not v:
+            testing_mode = os.getenv("TESTING") == "true" or os.getenv("PYTEST_CURRENT_TEST")
+            if not testing_mode:
+                raise ValueError("JWT_REFRESH_TOKEN_SECRET_KEY is required - missing environment variable")
+        return v
+    
+    @model_validator(mode='after')
+    def validate_different_secrets(self):
+        """Ensure refresh token secret is different from access token secret."""
+        if (self.jwt_secret_key and self.jwt_refresh_token_secret_key and 
+            self.jwt_secret_key == self.jwt_refresh_token_secret_key):
+            raise ValueError("Refresh and access token secrets must be different for security")
+        return self
     
     model_config = {
         "env_file": ".env",

@@ -18,7 +18,18 @@
     "test:coverage": "jest --coverage",
     "test:e2e": "detox test",
     "test:visual": "jest --testPathPattern=visual",
-    "test:dev-server": "jest __tests__/setup/dev-server.test.js"
+    "test:dev-server": "jest __tests__/setup/dev-server.test.js",
+    "env:local": "cp .env.local .env && echo 'Switched to local environment'",
+    "env:development": "cp .env.development .env && echo 'Switched to development environment'",
+    "env:staging": "cp .env.staging .env && echo 'Switched to staging environment'",
+    "env:production": "cp .env.production .env && echo 'Switched to production environment'",
+    "start:local": "npm run env:local && expo start --clear",
+    "start:staging": "npm run env:staging && expo start --clear",
+    "start:production": "npm run env:production && expo start --clear",
+    "build:staging": "npm run env:staging && expo build",
+    "build:production": "npm run env:production && expo build",
+    "test:config": "jest __tests__/config/environment.test.js",
+    "test:api-config": "jest __tests__/services/api-client-config.test.tsx"
   },
   "dependencies": {
     "@expo/vector-icons": "^14.1.0",
@@ -71,6 +82,8 @@
     "@testing-library/jest-native": "^5.4.3",
     "@testing-library/react-native": "^13.3.1",
     "@testing-library/user-event": "^14.6.1",
+    "@types/crypto-js": "^4.2.2",
+    "@types/jest": "^30.0.0",
     "@types/react": "~19.0.10",
     "detox": "^20.40.2",
     "dotenv": "^17.2.2",
