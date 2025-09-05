@@ -3,21 +3,20 @@
  * Manages user preferences, authentication state, and weight units
  */
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { apiClient, TokenManager, type UserResponse } from '../services/api-client';
 import type {
-  UserStore,
-  WeightUnit,
   AuthState,
   UserPreferences,
+  UserStore,
+  WeightUnit,
 } from '../types/workout';
 import {
-  STORAGE_KEYS,
   DEFAULT_USER_PREFERENCES,
+  STORAGE_KEYS,
 } from '../types/workout';
-import { apiClient, TokenManager, type UserResponse } from '../services/api-client';
-import CryptoJS from 'crypto-js';
 
 // Constants
 const USER_STORAGE_KEY = STORAGE_KEYS.USER_PREFERENCES;
@@ -205,46 +204,23 @@ export const useUserStore = create<UserStore>()(
       const state = get();
       
       try {
-        console.log('🚀 Development: Creating test user authentication...');
+        console.log('🚀 Development: Authenticating test user...');
         
-        // Create a valid JWT token using the backend's secret key
-        const jwtSecret = 'test_super_secret_jwt_key_for_authentication_tests_32_chars_min';
-        const now = Math.floor(Date.now() / 1000);
-        const exp = now + 3600; // 1 hour expiry
-        
-        const header = {
-          alg: 'HS256',
-          typ: 'JWT'
-        };
-        
-        const payload = {
-          sub: '550e8400-e29b-41d4-a716-446655440000', // Valid UUID format for test user
+        // Use the regular login endpoint with test credentials
+        console.log('🚀 Development: Attempting login with test@example.com');
+        const response = await apiClient.post('/auth/login', {
           email: 'test@example.com',
-          iat: now,
-          exp: exp
-        };
-        
-        const encodedHeader = btoa(JSON.stringify(header)).replace(/[+/=]/g, (match) => {
-          return { '+': '-', '/': '_', '=': '' }[match] || match;
+          password: 'testpassword123'  // Use the password you set in Supabase
         });
         
-        const encodedPayload = btoa(JSON.stringify(payload)).replace(/[+/=]/g, (match) => {
-          return { '+': '-', '/': '_', '=': '' }[match] || match;
-        });
+        console.log('🚀 Development: Login response received:', response);
         
-        const data = `${encodedHeader}.${encodedPayload}`;
-        
-        // Create HMAC-SHA256 signature
-        const hmac = CryptoJS.HmacSHA256(data, jwtSecret);
-        const signature = hmac.toString(CryptoJS.enc.Base64url);
-        
-        const jwtToken = `${data}.${signature}`;
-        
-        console.log('🚀 Development: Storing JWT token...');
+        // Store the tokens using TokenManager
         await TokenManager.setTokens({
-          access_token: jwtToken,
-          token_type: 'bearer',
-          expires_in: 3600,
+          access_token: response.access_token,
+          token_type: response.token_type,
+          expires_in: response.expires_in,
+          refresh_token: response.refresh_token
         });
         
         // Verify token was stored
@@ -281,8 +257,19 @@ export const useUserStore = create<UserStore>()(
         }
         
       } catch (error) {
-        console.error('Failed to create development JWT token:', error);
-        // Fall back to guest mode if JWT creation fails
+        console.error('Failed to authenticate test user:', error);
+        
+        // Log more details about the error
+        if (error && typeof error === 'object') {
+          console.error('Error details:', {
+            message: error.message,
+            status: error.status,
+            errorCode: error.errorCode,
+            originalError: error.originalError
+          });
+        }
+        
+        // Fall back to guest mode if authentication fails
         get().continueAsGuest();
       }
     },
@@ -818,7 +805,7 @@ export const useUserStore = create<UserStore>()(
 // This will be implemented when integrating with workout store
 
 // Export utilities for use in other parts of the app
-export { validateWeightUnit, validateAuthState, formatWeight };
+export { formatWeight, validateAuthState, validateWeightUnit };
 
 // Export default for consistency
 export default useUserStore;

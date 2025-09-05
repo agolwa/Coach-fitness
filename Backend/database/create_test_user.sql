@@ -10,7 +10,7 @@ INSERT INTO users (
     created_at,
     updated_at
 ) VALUES (
-    '550e8400-e29b-41d4-a716-446655440000'::uuid,
+    'fb00c744-28ec-4645-9cae-c9d94235ec38'::uuid,
     'test@example.com',
     'Test User',
     '{
@@ -29,4 +29,4 @@ INSERT INTO users (
 -- Verify the user was created
 SELECT id, email, display_name 
 FROM users 
-WHERE id = '550e8400-e29b-41d4-a716-446655440000'::uuid;
+WHERE id = 'fb00c744-28ec-4645-9cae-c9d94235ec38'::uuid;
