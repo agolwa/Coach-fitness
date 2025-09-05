@@ -1,3 +1,11 @@
+/**
+ * ExternalLink Component - ALREADY MIGRATED ✅
+ * 
+ * This component is a pure utility wrapper with no styling.
+ * It only handles link opening logic - no theme migration needed.
+ * Works perfectly with the unified theme system.
+ */
+
 import { Href, Link } from 'expo-router';
 import { openBrowserAsync } from 'expo-web-browser';
 import { type ComponentProps } from 'react';

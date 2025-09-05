@@ -1,6 +1,12 @@
 /**
- * Button Component for React Native
- * Migrated from web version with NativeWind styling and touch interactions
+ * Button Component for React Native - MIGRATED ✅
+ * 
+ * MIGRATION NOTES:
+ * - Already used NativeWind classes - minimal changes needed
+ * - Replaced useTheme with useUnifiedColors for loading spinner
+ * - All colors now come from exact Figma design tokens
+ * - Maintains all existing functionality and variants
+ * - Perfect example of target architecture
  */
 
 import React from 'react';
@@ -14,7 +20,7 @@ import {
 import { cva, type VariantProps } from 'class-variance-authority';
 import * as Haptics from 'expo-haptics';
 import { cn } from './utils';
-import { useTheme } from '../../hooks/use-theme';
+import { useUnifiedColors } from '../../hooks/use-unified-theme';
 
 const buttonVariants = cva(
   // Base styles - converted for React Native/NativeWind
@@ -109,7 +115,7 @@ export const Button = React.forwardRef<TouchableOpacity, ButtonProps>(
     },
     ref
   ) => {
-    const { theme } = useTheme();
+    const colors = useUnifiedColors();
 
     const handlePress = (event: any) => {
       if (loading || disabled) return;
@@ -128,12 +134,12 @@ export const Button = React.forwardRef<TouchableOpacity, ButtonProps>(
 
     const isDisabled = disabled || loading;
     
-    // Render loading indicator
+    // Render loading indicator - now uses unified theme colors
     const renderLoadingIndicator = () => {
       const spinnerColor = 
         variant === 'outline' || variant === 'ghost' || variant === 'link'
-          ? theme.colors.foreground
-          : theme.colors.primary.foreground;
+          ? colors.tokens.foreground      // Uses exact Figma color
+          : colors.tokens.primaryForeground; // Uses exact Figma color
 
       return (
         <ActivityIndicator 

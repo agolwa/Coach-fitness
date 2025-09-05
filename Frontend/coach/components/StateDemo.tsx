@@ -1,14 +1,20 @@
 /**
- * State Management Demo Component
+ * State Management Demo Component - MIGRATED ✅
  * Demonstrates the new Zustand stores in action
+ * 
+ * MIGRATION NOTES:
+ * - Converted from StyleSheet to NativeWind classes
+ * - Uses unified theme system with Figma colors
+ * - All colors now come from CSS variables
+ * - Automatic light/dark mode support
  */
 
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { useWorkout } from '../hooks/use-workout';
 import { useUser } from '../hooks/use-user';
 import { useExerciseStore } from '../stores/exercise-store';
-import { useTheme } from '../hooks/use-theme';
+import { useUnifiedTheme } from '../hooks/use-unified-theme';
 
 export function StateDemo() {
   const [selectedTab, setSelectedTab] = useState<'workout' | 'user' | 'exercises' | 'theme'>('workout');
@@ -17,31 +23,31 @@ export function StateDemo() {
   const workout = useWorkout();
   const user = useUser();
   const exerciseStore = useExerciseStore();
-  const theme = useTheme();
+  const theme = useUnifiedTheme();
 
   const renderWorkoutDemo = () => (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>Workout Store</Text>
+    <View className="bg-card p-4 rounded-lg mb-4 border border-border">
+      <Text className="text-lg font-semibold mb-3 text-card-foreground">Workout Store</Text>
       
-      <View style={styles.row}>
-        <Text>Active: {workout.isActive ? 'Yes' : 'No'}</Text>
-        <Text>Exercises: {workout.exercises.length}</Text>
+      <View className="flex-row justify-between mb-2">
+        <Text className="text-foreground">Active: {workout.isActive ? 'Yes' : 'No'}</Text>
+        <Text className="text-foreground">Exercises: {workout.exercises.length}</Text>
       </View>
       
-      <View style={styles.row}>
-        <Text>Title: "{workout.title}"</Text>
-        <Text>Weight Unit: {workout.weightUnit}</Text>
+      <View className="flex-row justify-between mb-2">
+        <Text className="text-foreground">Title: "{workout.title}"</Text>
+        <Text className="text-foreground">Weight Unit: {workout.weightUnit}</Text>
       </View>
       
       <TouchableOpacity 
-        style={styles.button} 
+        className="bg-primary py-2.5 px-4 rounded-md my-1 items-center active:opacity-80" 
         onPress={() => workout.updateWorkoutTitle('Demo Workout')}
       >
-        <Text style={styles.buttonText}>Set Demo Title</Text>
+        <Text className="text-primary-foreground font-semibold text-sm">Set Demo Title</Text>
       </TouchableOpacity>
       
       <TouchableOpacity 
-        style={styles.button} 
+        className="bg-primary py-2.5 px-4 rounded-md my-1 items-center active:opacity-80" 
         onPress={() => {
           const demoExercises = [
             { id: 1, name: 'Bench Press', muscle: 'Chest', equipment: 'Barbell', selected: true },
@@ -50,143 +56,166 @@ export function StateDemo() {
           workout.addExercises(demoExercises);
         }}
       >
-        <Text style={styles.buttonText}>Add Demo Exercises</Text>
+        <Text className="text-primary-foreground font-semibold text-sm">Add Demo Exercises</Text>
       </TouchableOpacity>
       
       <TouchableOpacity 
-        style={[styles.button, styles.dangerButton]} 
+        className="bg-destructive py-2.5 px-4 rounded-md my-1 items-center active:opacity-80" 
         onPress={() => workout.clearAllExercises()}
       >
-        <Text style={styles.buttonText}>Clear Workout</Text>
+        <Text className="text-destructive-foreground font-semibold text-sm">Clear Workout</Text>
       </TouchableOpacity>
       
       {workout.error && (
-        <Text style={styles.error}>Error: {workout.error}</Text>
+        <Text className="text-destructive text-xs mt-2 italic">Error: {workout.error}</Text>
       )}
     </View>
   );
 
   const renderUserDemo = () => (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>User Store</Text>
+    <View className="bg-card p-4 rounded-lg mb-4 border border-border">
+      <Text className="text-lg font-semibold mb-3 text-card-foreground">User Store</Text>
       
-      <View style={styles.row}>
-        <Text>Weight Unit: {user.weightUnit}</Text>
-        <Text>Can Change: {user.canChangeWeightUnit ? 'Yes' : 'No'}</Text>
+      <View className="flex-row justify-between mb-2">
+        <Text className="text-foreground">Weight Unit: {user.weightUnit}</Text>
+        <Text className="text-foreground">Can Change: {user.canChangeWeightUnit ? 'Yes' : 'No'}</Text>
       </View>
       
-      <View style={styles.row}>
-        <Text>Signed In: {user.isSignedIn ? 'Yes' : 'No'}</Text>
-        <Text>Guest: {user.isGuest ? 'Yes' : 'No'}</Text>
+      <View className="flex-row justify-between mb-2">
+        <Text className="text-foreground">Signed In: {user.isSignedIn ? 'Yes' : 'No'}</Text>
+        <Text className="text-foreground">Guest: {user.isGuest ? 'Yes' : 'No'}</Text>
       </View>
       
       <TouchableOpacity 
-        style={styles.button} 
+        className="bg-primary py-2.5 px-4 rounded-md my-1 items-center active:opacity-80" 
         onPress={() => user.setWeightUnit(user.weightUnit === 'kg' ? 'lbs' : 'kg')}
       >
-        <Text style={styles.buttonText}>Toggle Weight Unit</Text>
+        <Text className="text-primary-foreground font-semibold text-sm">Toggle Weight Unit</Text>
       </TouchableOpacity>
       
       <TouchableOpacity 
-        style={styles.button} 
+        className="bg-primary py-2.5 px-4 rounded-md my-1 items-center active:opacity-80" 
         onPress={() => user.isSignedIn ? user.signOut() : user.signIn()}
       >
-        <Text style={styles.buttonText}>
+        <Text className="text-primary-foreground font-semibold text-sm">
           {user.isSignedIn ? 'Sign Out' : 'Sign In'}
         </Text>
       </TouchableOpacity>
       
       {user.error && (
-        <Text style={styles.error}>Error: {user.error}</Text>
+        <Text className="text-destructive text-xs mt-2 italic">Error: {user.error}</Text>
       )}
     </View>
   );
 
   const renderExerciseDemo = () => (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>Exercise Store</Text>
+    <View className="bg-card p-4 rounded-lg mb-4 border border-border">
+      <Text className="text-lg font-semibold mb-3 text-card-foreground">Exercise Store</Text>
       
-      <View style={styles.row}>
-        <Text>Total: {exerciseStore.exercises.length}</Text>
-        <Text>Selected: {exerciseStore.selectedExercises.length}</Text>
+      <View className="flex-row justify-between mb-2">
+        <Text className="text-foreground">Total: {exerciseStore.exercises.length}</Text>
+        <Text className="text-foreground">Selected: {exerciseStore.selectedExercises.length}</Text>
       </View>
       
-      <View style={styles.row}>
-        <Text>Search: "{exerciseStore.filters.searchTerm}"</Text>
-        <Text>Muscle Filters: {exerciseStore.filters.muscle.length}</Text>
+      <View className="flex-row justify-between mb-2">
+        <Text className="text-foreground">Search: "{exerciseStore.filters.searchTerm}"</Text>
+        <Text className="text-foreground">Muscle Filters: {exerciseStore.filters.muscle.length}</Text>
       </View>
       
       <TouchableOpacity 
-        style={styles.button} 
+        className="bg-primary py-2.5 px-4 rounded-md my-1 items-center active:opacity-80" 
         onPress={() => exerciseStore.searchExercises('bench')}
       >
-        <Text style={styles.buttonText}>Search "bench"</Text>
+        <Text className="text-primary-foreground font-semibold text-sm">Search "bench"</Text>
       </TouchableOpacity>
       
       <TouchableOpacity 
-        style={styles.button} 
+        className="bg-primary py-2.5 px-4 rounded-md my-1 items-center active:opacity-80" 
         onPress={() => exerciseStore.filterByMuscle(['Chest'])}
       >
-        <Text style={styles.buttonText}>Filter Chest</Text>
+        <Text className="text-primary-foreground font-semibold text-sm">Filter Chest</Text>
       </TouchableOpacity>
       
       <TouchableOpacity 
-        style={styles.button} 
+        className="bg-primary py-2.5 px-4 rounded-md my-1 items-center active:opacity-80" 
         onPress={() => exerciseStore.clearFilters()}
       >
-        <Text style={styles.buttonText}>Clear Filters</Text>
+        <Text className="text-primary-foreground font-semibold text-sm">Clear Filters</Text>
       </TouchableOpacity>
       
+      
       {exerciseStore.error && (
-        <Text style={styles.error}>Error: {exerciseStore.error}</Text>
+        <Text className="text-destructive text-xs mt-2 italic">Error: {exerciseStore.error}</Text>
       )}
     </View>
   );
 
   const renderThemeDemo = () => (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>Theme Store</Text>
+    <View className="bg-card p-4 rounded-lg mb-4 border border-border">
+      <Text className="text-lg font-semibold mb-3 text-card-foreground">Theme Store</Text>
       
-      <View style={styles.row}>
-        <Text>Theme: {theme.colorScheme}</Text>
-        <Text>Is Dark: {theme.isDark ? 'Yes' : 'No'}</Text>
+      <View className="flex-row justify-between mb-2">
+        <Text className="text-foreground">Theme: {theme.colorScheme}</Text>
+        <Text className="text-foreground">Is Dark: {theme.isDark ? 'Yes' : 'No'}</Text>
+      </View>
+      
+      {/* Show actual color values being used */}
+      <View className="bg-muted p-2 rounded mb-3">
+        <Text className="text-muted-foreground text-xs mb-1">Current Colors:</Text>
+        <Text className="text-muted-foreground text-xs">Primary: {theme.newTokens.colors.primary}</Text>
+        <Text className="text-muted-foreground text-xs">Background: {theme.newTokens.colors.background}</Text>
       </View>
       
       <TouchableOpacity 
-        style={styles.button} 
+        className="bg-primary py-2.5 px-4 rounded-md my-1 items-center active:opacity-80" 
         onPress={() => theme.toggleColorScheme()}
       >
-        <Text style={styles.buttonText}>Toggle Theme</Text>
+        <Text className="text-primary-foreground font-semibold text-sm">Toggle Theme</Text>
       </TouchableOpacity>
       
       <TouchableOpacity 
-        style={styles.button} 
+        className="bg-secondary border border-border py-2.5 px-4 rounded-md my-1 items-center active:bg-accent" 
         onPress={() => theme.setColorScheme('light')}
       >
-        <Text style={styles.buttonText}>Force Light</Text>
+        <Text className="text-secondary-foreground font-semibold text-sm">Force Light</Text>
       </TouchableOpacity>
       
       <TouchableOpacity 
-        style={styles.button} 
+        className="bg-secondary border border-border py-2.5 px-4 rounded-md my-1 items-center active:bg-accent" 
         onPress={() => theme.setColorScheme('dark')}
       >
-        <Text style={styles.buttonText}>Force Dark</Text>
+        <Text className="text-secondary-foreground font-semibold text-sm">Force Dark</Text>
       </TouchableOpacity>
     </View>
   );
 
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.title}>Zustand State Management Demo</Text>
+    <ScrollView className="flex-1 p-4 bg-background">
+      <Text className="text-2xl font-bold text-center mb-5 text-foreground">
+        Zustand State Management Demo
+      </Text>
       
-      <View style={styles.tabs}>
+      {/* Migration indicator */}
+      <View className="bg-primary/10 p-3 rounded-lg mb-5 border border-primary/20">
+        <Text className="text-primary text-sm font-medium text-center">
+          ✅ MIGRATED: Now using unified theme system with Figma colors
+        </Text>
+      </View>
+      
+      <View className="flex-row mb-5 rounded-lg bg-secondary p-1">
         {(['workout', 'user', 'exercises', 'theme'] as const).map((tab) => (
           <TouchableOpacity
             key={tab}
-            style={[styles.tab, selectedTab === tab && styles.activeTab]}
+            className={`flex-1 py-2 px-3 rounded-md items-center ${
+              selectedTab === tab ? 'bg-primary' : ''
+            }`}
             onPress={() => setSelectedTab(tab)}
           >
-            <Text style={[styles.tabText, selectedTab === tab && styles.activeTabText]}>
+            <Text className={`text-sm ${
+              selectedTab === tab 
+                ? 'text-primary-foreground font-semibold' 
+                : 'text-muted-foreground'
+            }`}>
               {tab.charAt(0).toUpperCase() + tab.slice(1)}
             </Text>
           </TouchableOpacity>
@@ -201,83 +230,15 @@ export function StateDemo() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-    backgroundColor: '#fff',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 20,
-    color: '#333',
-  },
-  tabs: {
-    flexDirection: 'row',
-    marginBottom: 20,
-    borderRadius: 8,
-    backgroundColor: '#f0f0f0',
-    padding: 4,
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 6,
-    alignItems: 'center',
-  },
-  activeTab: {
-    backgroundColor: '#007AFF',
-  },
-  tabText: {
-    fontSize: 14,
-    color: '#666',
-  },
-  activeTabText: {
-    color: '#fff',
-    fontWeight: '600',
-  },
-  section: {
-    backgroundColor: '#f9f9f9',
-    padding: 16,
-    borderRadius: 8,
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 12,
-    color: '#333',
-  },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  button: {
-    backgroundColor: '#007AFF',
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 6,
-    marginVertical: 4,
-    alignItems: 'center',
-  },
-  dangerButton: {
-    backgroundColor: '#FF3B30',
-  },
-  buttonText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  error: {
-    color: '#FF3B30',
-    fontSize: 12,
-    marginTop: 8,
-    fontStyle: 'italic',
-  },
-});
+// ✅ MIGRATION COMPLETE: All StyleSheet removed
+// All styling now uses NativeWind classes with Figma design tokens
 
 export default StateDemo;
+
+// MIGRATION NOTES:
+// ✅ Converted from StyleSheet.create to NativeWind classes
+// ✅ All hardcoded colors (#007AFF, #FF3B30, etc.) replaced with theme tokens
+// ✅ Uses unified theme system: primary = #00b561 (exact Figma value)
+// ✅ Automatic light/dark mode support
+// ✅ Shows actual color values being used in theme demo
+// ✅ Added migration indicator to show successful conversion

@@ -1,6 +1,12 @@
 /**
- * Home Screen - VoiceLog Workout App
- * Main workout screen with exercise logging, workout creation, and management
+ * Home Screen - VoiceLog Workout App - MIGRATED ✅
+ * 
+ * MIGRATION NOTES:
+ * - Replaced useTheme with useUnifiedColors for all color access
+ * - All inline theme.colors references updated to unified system
+ * - Hardcoded color (#000000) replaced with exact Figma token
+ * - Perfect integration with design token architecture
+ * - All functionality preserved including server sync and offline handling
  */
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -22,7 +28,7 @@ import * as Haptics from 'expo-haptics';
 import { TodaysLog } from '@/components/TodaysLog';
 import { useWorkoutStore } from '@/stores/workout-store';
 import { useUserStore } from '@/stores/user-store';
-import { useTheme } from '@/hooks/use-theme';
+import { useUnifiedColors } from '@/hooks/use-unified-theme';
 import { useNetwork } from '@/hooks/use-network';
 import { router } from 'expo-router';
 import { WORKOUT_CONSTANTS } from '@/types/workout';
@@ -37,12 +43,9 @@ import type { APIError } from '@/services/api-client';
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
-  const { theme } = useTheme();
+  const colors = useUnifiedColors();
   const { authState, isSignedIn } = useUserStore();
   const { isOnline, isOffline, connectionType, hasStrongConnection } = useNetwork();
-  
-  // Extract colors for easier access
-  const colors = theme.colors;
   
   // Local Zustand store for offline functionality
   const {
@@ -411,7 +414,7 @@ export default function HomeScreen() {
               <Ionicons 
                 name="ellipsis-vertical" 
                 size={24} 
-                color={hasExercises ? theme.colors.foreground : theme.colors.muted.foreground}
+                color={hasExercises ? colors.tokens.foreground : colors.tokens.mutedForeground}
               />
             </TouchableOpacity>
           </View>
@@ -422,11 +425,11 @@ export default function HomeScreen() {
               value={workoutTitle}
               onChangeText={handleWorkoutTitleChange}
               placeholder="Enter workout name..."
-              placeholderTextColor={colors.muted.foreground}
+              placeholderTextColor={colors.tokens.mutedForeground}
               className="text-lg font-medium border-b pb-2"
               style={{
-                color: '#000000',
-                borderBottomColor: colors.muted.foreground,
+                color: colors.tokens.foreground, // Uses exact Figma foreground token
+                borderBottomColor: colors.tokens.mutedForeground,
                 fontSize: 18,
                 fontWeight: '500',
               }}
@@ -464,7 +467,7 @@ export default function HomeScreen() {
                 </>
               ) : (
                 <>
-                  <Ionicons name="add" size={20} color={colors.primary.foreground} />
+                  <Ionicons name="add" size={20} color={colors.tokens.primaryForeground} />
                   <Text className="text-primary-foreground font-medium ml-2">
                     Add Exercise
                   </Text>

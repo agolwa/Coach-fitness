@@ -1,5 +1,15 @@
+/**
+ * HelloWave Component - MIGRATED ✅
+ * 
+ * MIGRATION NOTES:
+ * - Converted from ThemedText to direct Text with NativeWind
+ * - Removed StyleSheet in favor of className
+ * - Uses unified theme system typography
+ * - Animation behavior preserved
+ */
+
 import { useEffect } from 'react';
-import { StyleSheet } from 'react-native';
+import { Text } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -7,8 +17,6 @@ import Animated, {
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
-
-import { ThemedText } from '@/components/ThemedText';
 
 export function HelloWave() {
   const rotationAnimation = useSharedValue(0);
@@ -26,15 +34,14 @@ export function HelloWave() {
 
   return (
     <Animated.View style={animatedStyle}>
-      <ThemedText style={styles.text}>👋</ThemedText>
+      <Text className="text-3xl leading-8 -mt-1.5">
+        👋
+      </Text>
     </Animated.View>
   );
 }
 
-const styles = StyleSheet.create({
-  text: {
-    fontSize: 28,
-    lineHeight: 32,
-    marginTop: -6,
-  },
-});
+// ✅ MIGRATION COMPLETE: StyleSheet removed, now using NativeWind classes
+// text-3xl = 30px (close to original 28px)
+// leading-8 = 32px line-height (exact match)
+// -mt-1.5 = -6px margin-top (exact match)

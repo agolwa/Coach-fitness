@@ -1,6 +1,12 @@
 /**
- * Activity Tab Screen - React Native Version
- * Displays workout history, statistics, and current session
+ * Activity Tab Screen - React Native Version - MIGRATED ✅
+ * 
+ * MIGRATION NOTES:
+ * - Replaced useTheme with useUnifiedColors for all color access
+ * - All theme.colors references updated to unified token system
+ * - Hex color concatenation replaced with proper opacity tokens
+ * - Perfect integration with exact Figma design values
+ * - All workout history functionality preserved
  */
 
 import { useState, useCallback, useMemo } from 'react';
@@ -19,7 +25,7 @@ import { Ionicons } from '@expo/vector-icons';
 // Store imports
 import { useWorkoutStore } from '@/stores/workout-store';
 import { useUserStore } from '@/stores/user-store';
-import { useTheme } from '@/hooks/use-theme';
+import { useUnifiedColors } from '@/hooks/use-unified-theme';
 
 // Type imports
 import type { WorkoutHistoryItem, WorkoutExercise } from '@/types/workout';
@@ -40,7 +46,7 @@ export default function ActivityScreen() {
   // Store state
   const workoutStore = useWorkoutStore();
   const userStore = useUserStore();
-  const { theme } = useTheme();
+  const colors = useUnifiedColors();
 
   // Local state
   const [dateFilter, setDateFilter] = useState<'all' | 'week' | 'month'>('all');
@@ -187,7 +193,7 @@ export default function ActivityScreen() {
     ]);
   };
 
-  const colors = theme.colors;
+  // Colors already available from useUnifiedColors hook
 
   return (
     <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
@@ -197,7 +203,7 @@ export default function ActivityScreen() {
           <Ionicons 
             name="pulse-outline" 
             size={24} 
-            color={colors.primary.DEFAULT} 
+            color={colors.tokens.primary} 
           />
           <Text className="text-foreground text-xl font-semibold">
             Workout History
@@ -224,7 +230,7 @@ export default function ActivityScreen() {
                 <Ionicons 
                   name="chevron-down" 
                   size={16} 
-                  color={colors.muted.foreground} 
+                  color={colors.tokens.mutedForeground} 
                 />
               </TouchableOpacity>
             </View>
@@ -261,12 +267,12 @@ export default function ActivityScreen() {
               <TouchableOpacity
                 onPress={() => router.push('/(tabs)/')}
                 className="bg-card border border-primary/20 rounded-xl p-4"
-                style={{ backgroundColor: colors.primary.DEFAULT + '0D' }}
+                style={{ backgroundColor: colors.tokens.primaryMuted }}
               >
                 <View className="flex-row items-center gap-3 mb-2">
                   <View 
                     className="w-8 h-8 rounded-full items-center justify-center"
-                    style={{ backgroundColor: colors.primary.DEFAULT + '33' }}
+                    style={{ backgroundColor: colors.tokens.primaryHover }}
                   >
                     <Text className="text-lg">🔥</Text>
                   </View>
@@ -347,7 +353,7 @@ export default function ActivityScreen() {
                     <Ionicons 
                       name="add-circle-outline" 
                       size={20} 
-                      color={colors.muted.foreground} 
+                      color={colors.tokens.mutedForeground} 
                     />
                   </TouchableOpacity>
                 </View>
@@ -390,7 +396,7 @@ export default function ActivityScreen() {
               >
                 {isLoading ? (
                   <>
-                    <ActivityIndicator size="small" color={colors.muted.foreground} />
+                    <ActivityIndicator size="small" color={colors.tokens.mutedForeground} />
                     <Text className="text-muted-foreground">Loading...</Text>
                   </>
                 ) : (

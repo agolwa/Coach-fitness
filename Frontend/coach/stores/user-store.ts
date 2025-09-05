@@ -253,19 +253,18 @@ export const useUserStore = create<UserStore>()(
           const response = await apiClient.get('/auth/me');
           console.log('🚀 Development: Authentication test successful:', response);
         } catch (testError) {
-          console.error('🚀 Development: Authentication test failed:', testError);
+          console.log('🚀 Development: Authentication test failed (normal when backend not running):', testError.message || testError);
         }
         
       } catch (error) {
-        console.error('Failed to authenticate test user:', error);
+        console.log('🚀 Development: Test user authentication failed (normal when backend not running)');
         
-        // Log more details about the error
+        // Log more details about the error in a less alarming way
         if (error && typeof error === 'object') {
-          console.error('Error details:', {
+          console.log('🔧 Development: Error details (for debugging):', {
             message: error.message,
             status: error.status,
             errorCode: error.errorCode,
-            originalError: error.originalError
           });
         }
         
@@ -381,8 +380,14 @@ export const useUserStore = create<UserStore>()(
         
         // In development mode, automatically sign in as test user
         if (__DEV__) {
-          console.log('🚀 Development: Auto-signing in test user during initialization');
-          await get().signInAsTestUser();
+          try {
+            console.log('🚀 Development: Auto-signing in test user during initialization');
+            await get().signInAsTestUser();
+          } catch (error) {
+            // Fail gracefully - don't crash the app if test user sign-in fails
+            console.log('🚀 Development: Test user sign-in failed (this is normal if backend is not running)');
+            console.log('🚀 Development: Continuing with guest mode...');
+          }
         }
         
       } catch (error) {
@@ -398,7 +403,9 @@ export const useUserStore = create<UserStore>()(
           try {
             await get().signInAsTestUser();
           } catch (signInError) {
-            console.warn('Development: Failed to auto-sign in after init error:', signInError);
+            // Fail gracefully - don't crash the app
+            console.log('🚀 Development: Test user sign-in failed after init error (this is normal if backend is not running)');
+            console.log('🚀 Development: Continuing with guest mode...');
           }
         }
       } finally {

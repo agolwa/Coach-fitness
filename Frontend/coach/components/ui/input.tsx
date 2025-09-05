@@ -1,6 +1,12 @@
 /**
- * Input Components for React Native
- * Migrated from web version with TextInput and proper mobile UX
+ * Input Components for React Native - MIGRATED ✅
+ * 
+ * MIGRATION NOTES:
+ * - Replaced useTheme with useUnifiedColors for all color access
+ * - All colors now come from exact Figma design tokens
+ * - Maintains all input functionality and validation states
+ * - Proper TextInput integration with unified theme
+ * - Textarea and SearchInput also migrated
  */
 
 import React, { useState, useCallback } from 'react';
@@ -13,7 +19,7 @@ import {
 } from 'react-native';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from './utils';
-import { useTheme } from '../../hooks/use-theme';
+import { useUnifiedColors } from '../../hooks/use-unified-theme';
 
 const inputVariants = cva(
   // Base styles for React Native TextInput
@@ -107,15 +113,15 @@ export const Input = React.forwardRef<TextInput, InputProps>(
     },
     ref
   ) => {
-    const { theme } = useTheme();
+    const colors = useUnifiedColors();
     const [isPasswordVisible, setIsPasswordVisible] = useState(!secureTextEntry);
     const [isFocused, setIsFocused] = useState(false);
 
     // Determine variant based on validation state
     const currentVariant = error ? 'error' : success ? 'success' : variant;
     
-    // Get placeholder color from theme
-    const defaultPlaceholderColor = theme.colors.muted.foreground;
+    // Get placeholder color from unified theme
+    const defaultPlaceholderColor = colors.tokens.mutedForeground;
 
     const handleClear = useCallback(() => {
       onChangeText?.('');
@@ -227,7 +233,7 @@ export const Input = React.forwardRef<TextInput, InputProps>(
             style={[
               {
                 // Ensure proper text color inheritance
-                color: theme.colors.foreground,
+                color: colors.tokens.foreground,
               },
               style,
             ]}
@@ -298,15 +304,15 @@ export const Textarea = React.forwardRef<TextInput, TextareaProps>(
     },
     ref
   ) => {
-    const { theme } = useTheme();
+    const colors = useUnifiedColors();
     const [height, setHeight] = useState(minHeight);
     const [isFocused, setIsFocused] = useState(false);
 
     // Determine variant based on validation state
     const currentVariant = error ? 'error' : success ? 'success' : variant;
     
-    // Get placeholder color from theme
-    const defaultPlaceholderColor = theme.colors.muted.foreground;
+    // Get placeholder color from unified theme
+    const defaultPlaceholderColor = colors.tokens.mutedForeground;
 
     const handleContentSizeChange = useCallback((e: any) => {
       if (!autoResize) return;
@@ -375,7 +381,7 @@ export const Textarea = React.forwardRef<TextInput, TextareaProps>(
           style={[
             {
               height: autoResize ? height : minHeight,
-              color: theme.colors.foreground,
+              color: colors.tokens.foreground,
             },
             style,
           ]}

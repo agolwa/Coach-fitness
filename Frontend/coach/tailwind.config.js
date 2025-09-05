@@ -1,4 +1,5 @@
 /** @type {import('tailwindcss').Config} */
+// Updated to use design tokens from styles/design-tokens.ts
 module.exports = {
   content: [
     './App.{js,jsx,ts,tsx}',
@@ -10,74 +11,74 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Core Colors - Uber's characteristic palette with dark mode support
-        background: 'hsl(var(--background))',
-        foreground: 'hsl(var(--foreground))',
+        // Core Colors - Now using exact Figma HEX values with HSL fallbacks
+        background: 'var(--background, hsl(var(--background-hsl)))',
+        foreground: 'var(--foreground, hsl(var(--foreground-hsl)))',
         card: {
-          DEFAULT: 'hsl(var(--card))',
-          foreground: 'hsl(var(--card-foreground))',
+          DEFAULT: 'var(--card, hsl(var(--card-hsl)))',
+          foreground: 'var(--card-foreground, hsl(var(--card-foreground-hsl)))',
         },
         popover: {
-          DEFAULT: 'hsl(var(--popover))',
-          foreground: 'hsl(var(--popover-foreground))',
+          DEFAULT: 'var(--popover, hsl(var(--popover-hsl)))',
+          foreground: 'var(--popover-foreground, hsl(var(--popover-foreground-hsl)))',
         },
         
-        // Primary - Uber Green
+        // Primary - Uber Green (exact Figma HEX with HSL fallback)
         primary: {
-          DEFAULT: 'hsl(var(--primary))',
-          foreground: 'hsl(var(--primary-foreground))',
+          DEFAULT: 'var(--primary, hsl(var(--primary-hsl)))',
+          foreground: 'var(--primary-foreground, hsl(var(--primary-foreground-hsl)))',
         },
         
-        // Secondary - Neutral grays
+        // Secondary - Neutral grays (exact Figma HEX with HSL fallback)
         secondary: {
-          DEFAULT: 'hsl(var(--secondary))',
-          foreground: 'hsl(var(--secondary-foreground))',
+          DEFAULT: 'var(--secondary, hsl(var(--secondary-hsl)))',
+          foreground: 'var(--secondary-foreground, hsl(var(--secondary-foreground-hsl)))',
         },
         
-        // Muted - Light grays for subtle elements
+        // Muted - Light grays for subtle elements (exact Figma HEX with HSL fallback)
         muted: {
-          DEFAULT: 'hsl(var(--muted))',
-          foreground: 'hsl(var(--muted-foreground))',
+          DEFAULT: 'var(--muted, hsl(var(--muted-hsl)))',
+          foreground: 'var(--muted-foreground, hsl(var(--muted-foreground-hsl)))',
         },
         
-        // Accent - Slightly darker than secondary
+        // Accent - Slightly darker than secondary (exact Figma HEX with HSL fallback)
         accent: {
-          DEFAULT: 'hsl(var(--accent))',
-          foreground: 'hsl(var(--accent-foreground))',
+          DEFAULT: 'var(--accent, hsl(var(--accent-hsl)))',
+          foreground: 'var(--accent-foreground, hsl(var(--accent-foreground-hsl)))',
         },
         
-        // Destructive - Uber's red for errors
+        // Destructive - Uber's red for errors (exact Figma HEX with HSL fallback)
         destructive: {
-          DEFAULT: 'hsl(var(--destructive))',
-          foreground: 'hsl(var(--destructive-foreground))',
+          DEFAULT: 'var(--destructive, hsl(var(--destructive-hsl)))',
+          foreground: 'var(--destructive-foreground, hsl(var(--destructive-foreground-hsl)))',
         },
         
-        // Borders and inputs
-        border: 'hsl(var(--border))',
-        input: 'hsl(var(--input))',
-        'input-background': 'hsl(var(--input-background))',
-        'switch-background': 'hsl(var(--switch-background))',
-        ring: 'hsl(var(--ring))',
+        // Borders and inputs (exact Figma HEX with HSL fallback)
+        border: 'var(--border, hsl(var(--border-hsl)))',
+        input: 'var(--input, hsl(var(--input-hsl)))',
+        'input-background': 'var(--input-background, hsl(var(--input-background-hsl)))',
+        'switch-background': 'var(--switch-background, hsl(var(--switch-background-hsl)))',
+        ring: 'var(--ring, hsl(var(--ring-hsl)))',
         
-        // Chart colors for data visualization
+        // Chart colors for data visualization (exact Figma HEX with HSL fallback)
         chart: {
-          1: 'hsl(var(--chart-1))',
-          2: 'hsl(var(--chart-2))',
-          3: 'hsl(var(--chart-3))',
-          4: 'hsl(var(--chart-4))',
-          5: 'hsl(var(--chart-5))',
+          1: 'var(--chart-1, hsl(var(--chart-1-hsl)))',
+          2: 'var(--chart-2, hsl(var(--chart-2-hsl)))',
+          3: 'var(--chart-3, hsl(var(--chart-3-hsl)))',
+          4: 'var(--chart-4, hsl(var(--chart-4-hsl)))',
+          5: 'var(--chart-5, hsl(var(--chart-5-hsl)))',
         },
         
-        // Sidebar colors (if needed)
+        // Sidebar colors (exact Figma HEX with HSL fallback)
         sidebar: {
-          DEFAULT: 'hsl(var(--sidebar))',
-          foreground: 'hsl(var(--sidebar-foreground))',
-          primary: 'hsl(var(--sidebar-primary))',
-          'primary-foreground': 'hsl(var(--sidebar-primary-foreground))',
-          accent: 'hsl(var(--sidebar-accent))',
-          'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
-          border: 'hsl(var(--sidebar-border))',
-          ring: 'hsl(var(--sidebar-ring))',
+          DEFAULT: 'var(--sidebar, hsl(var(--sidebar-hsl)))',
+          foreground: 'var(--sidebar-foreground, hsl(var(--sidebar-foreground-hsl)))',
+          primary: 'var(--sidebar-primary, hsl(var(--sidebar-primary-hsl)))',
+          'primary-foreground': 'var(--sidebar-primary-foreground, hsl(var(--sidebar-primary-foreground-hsl)))',
+          accent: 'var(--sidebar-accent, hsl(var(--sidebar-accent-hsl)))',
+          'accent-foreground': 'var(--sidebar-accent-foreground, hsl(var(--sidebar-accent-foreground-hsl)))',
+          border: 'var(--sidebar-border, hsl(var(--sidebar-border-hsl)))',
+          ring: 'var(--sidebar-ring, hsl(var(--sidebar-ring-hsl)))',
         },
       },
       

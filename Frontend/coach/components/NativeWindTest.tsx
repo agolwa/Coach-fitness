@@ -1,9 +1,20 @@
 import React from 'react';
 import { View, Text, Pressable } from 'react-native';
 
+/**
+ * NativeWindTest Component - MIGRATED ✅
+ * 
+ * This component demonstrates the new unified theme system:
+ * - Uses pure NativeWind classes (no inline styles)
+ * - All colors come from Figma design tokens
+ * - Automatic light/dark mode support via CSS variables
+ * - Example of target migration pattern for other components
+ */
+
 export function NativeWindTest() {
   return (
     <View className="flex-1 bg-background p-4">
+      {/* All classes use exact Figma HEX values via CSS variables */}
       <Text className="text-2xl font-semibold text-foreground mb-4">
         NativeWind Test
       </Text>

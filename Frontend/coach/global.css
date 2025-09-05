@@ -4,92 +4,165 @@
 
 :root {
   /* Uber Base Design System - Light Theme */
+  /* Updated with exact Figma HEX values from figma-migration/styles/globals.css */
   --font-size: 14px;
   
-  /* Core Colors - Uber's characteristic palette */
-  --background: 0 0% 100%;
-  --foreground: 0 0% 12.5%;
-  --card: 0 0% 100%;
-  --card-foreground: 0 0% 12.5%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 0 0% 12.5%;
+  /* Core Colors - Figma HEX values (with HSL fallbacks for safety) */
+  --background: #ffffff; /* was: 0 0% 100% */
+  --background-hsl: 0 0% 100%; /* HSL fallback */
+  --foreground: #202020; /* was: 0 0% 12.5% */
+  --foreground-hsl: 0 0% 12.5%; /* HSL fallback */
+  --card: #ffffff; /* was: 0 0% 100% */
+  --card-hsl: 0 0% 100%; /* HSL fallback */
+  --card-foreground: #202020; /* was: 0 0% 12.5% */
+  --card-foreground-hsl: 0 0% 12.5%; /* HSL fallback */
+  --popover: #ffffff; /* was: 0 0% 100% */
+  --popover-hsl: 0 0% 100%; /* HSL fallback */
+  --popover-foreground: #202020; /* was: 0 0% 12.5% */
+  --popover-foreground-hsl: 0 0% 12.5%; /* HSL fallback */
   
-  /* Primary - Uber Green */
-  --primary: 158 100% 35.5%;
-  --primary-foreground: 0 0% 100%;
+  /* Primary - Uber Green (exact Figma value) */
+  --primary: #00b561; /* was: 158 100% 35.5% */
+  --primary-hsl: 158 100% 35.5%; /* HSL fallback */
+  --primary-foreground: #ffffff; /* was: 0 0% 100% */
+  --primary-foreground-hsl: 0 0% 100%; /* HSL fallback */
   
-  /* Secondary - Neutral grays */
-  --secondary: 0 0% 96.5%;
-  --secondary-foreground: 0 0% 12.5%;
+  /* Secondary - Neutral grays (exact Figma values) */
+  --secondary: #f6f6f6; /* was: 0 0% 96.5% */
+  --secondary-hsl: 0 0% 96.5%; /* HSL fallback */
+  --secondary-foreground: #202020; /* was: 0 0% 12.5% */
+  --secondary-foreground-hsl: 0 0% 12.5%; /* HSL fallback */
   
-  /* Muted - Light grays for subtle elements */
-  --muted: 0 0% 96.5%;
-  --muted-foreground: 0 0% 45.1%;
+  /* Muted - Light grays for subtle elements (exact Figma values) */
+  --muted: #f6f6f6; /* was: 0 0% 96.5% */
+  --muted-hsl: 0 0% 96.5%; /* HSL fallback */
+  --muted-foreground: #6b7280; /* was: 0 0% 45.1% */
+  --muted-foreground-hsl: 0 0% 45.1%; /* HSL fallback */
   
-  /* Accent - Slightly darker than secondary */
-  --accent: 0 0% 94.5%;
-  --accent-foreground: 0 0% 12.5%;
+  /* Accent - Slightly darker than secondary (exact Figma values) */
+  --accent: #f1f1f1; /* was: 0 0% 94.5% */
+  --accent-hsl: 0 0% 94.5%; /* HSL fallback */
+  --accent-foreground: #202020; /* was: 0 0% 12.5% */
+  --accent-foreground-hsl: 0 0% 12.5%; /* HSL fallback */
   
-  /* Destructive - Uber's red for errors */
-  --destructive: 0 84% 60%;
-  --destructive-foreground: 0 0% 100%;
+  /* Destructive - Uber's red for errors (exact Figma values) */
+  --destructive: #e53e3e; /* was: 0 84% 60% */
+  --destructive-hsl: 0 84% 60%; /* HSL fallback */
+  --destructive-foreground: #ffffff; /* was: 0 0% 100% */
+  --destructive-foreground-hsl: 0 0% 100%; /* HSL fallback */
   
-  /* Borders and inputs */
-  --border: 0 0% 89.8%;
-  --input: 0 0% 100%;
-  --input-background: 0 0% 100%;
-  --switch-background: 0 0% 89.8%;
+  /* Borders and inputs (exact Figma values) */
+  --border: #e5e5e5; /* was: 0 0% 89.8% */
+  --border-hsl: 0 0% 89.8%; /* HSL fallback */
+  --input: #ffffff; /* was: 0 0% 100% */
+  --input-hsl: 0 0% 100%; /* HSL fallback */
+  --input-background: #ffffff; /* was: 0 0% 100% */
+  --input-background-hsl: 0 0% 100%; /* HSL fallback */
+  --switch-background: #e5e5e5; /* was: 0 0% 89.8% */
+  --switch-background-hsl: 0 0% 89.8%; /* HSL fallback */
   
-  /* Focus ring */
-  --ring: 158 100% 35.5%;
+  /* Focus ring (exact Figma value) */
+  --ring: #00b561; /* was: 158 100% 35.5% */
+  --ring-hsl: 158 100% 35.5%; /* HSL fallback */
   
-  /* Chart colors */
-  --chart-1: 158 100% 35.5%;
-  --chart-2: 160 84% 39%;
-  --chart-3: 188 95% 42.5%;
-  --chart-4: 258 90% 66%;
-  --chart-5: 336 84% 57%;
+  /* Chart colors (exact Figma values) */
+  --chart-1: #00b561; /* was: 158 100% 35.5% */
+  --chart-1-hsl: 158 100% 35.5%; /* HSL fallback */
+  --chart-2: #059669; /* was: 160 84% 39% */
+  --chart-2-hsl: 160 84% 39%; /* HSL fallback */
+  --chart-3: #0891b2; /* was: 188 95% 42.5% */
+  --chart-3-hsl: 188 95% 42.5%; /* HSL fallback */
+  --chart-4: #7c3aed; /* was: 258 90% 66% */
+  --chart-4-hsl: 258 90% 66%; /* HSL fallback */
+  --chart-5: #db2777; /* was: 336 84% 57% */
+  --chart-5-hsl: 336 84% 57%; /* HSL fallback */
   
-  /* Sidebar (if needed) */
-  --sidebar: 0 0% 100%;
-  --sidebar-foreground: 0 0% 12.5%;
-  --sidebar-primary: 158 100% 35.5%;
-  --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 0 0% 96.5%;
-  --sidebar-accent-foreground: 0 0% 12.5%;
-  --sidebar-border: 0 0% 89.8%;
-  --sidebar-ring: 158 100% 35.5%;
+  /* Sidebar (if needed) - exact Figma values */
+  --sidebar: #ffffff; /* was: 0 0% 100% */
+  --sidebar-hsl: 0 0% 100%; /* HSL fallback */
+  --sidebar-foreground: #202020; /* was: 0 0% 12.5% */
+  --sidebar-foreground-hsl: 0 0% 12.5%; /* HSL fallback */
+  --sidebar-primary: #00b561; /* was: 158 100% 35.5% */
+  --sidebar-primary-hsl: 158 100% 35.5%; /* HSL fallback */
+  --sidebar-primary-foreground: #ffffff; /* was: 0 0% 100% */
+  --sidebar-primary-foreground-hsl: 0 0% 100%; /* HSL fallback */
+  --sidebar-accent: #f6f6f6; /* was: 0 0% 96.5% */
+  --sidebar-accent-hsl: 0 0% 96.5%; /* HSL fallback */
+  --sidebar-accent-foreground: #202020; /* was: 0 0% 12.5% */
+  --sidebar-accent-foreground-hsl: 0 0% 12.5%; /* HSL fallback */
+  --sidebar-border: #e5e5e5; /* was: 0 0% 89.8% */
+  --sidebar-border-hsl: 0 0% 89.8%; /* HSL fallback */
+  --sidebar-ring: #00b561; /* was: 158 100% 35.5% */
+  --sidebar-ring-hsl: 158 100% 35.5%; /* HSL fallback */
+  
+  /* Typography weights - from Figma */
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+  --font-weight-semibold: 600;
+  
+  /* Radius - Clean, modern but not overly rounded - from Figma */
+  --radius: 8px;
 }
 
 .dark {
-  /* Dark theme with Uber's approach */
-  --background: 0 0% 0%;
-  --foreground: 0 0% 100%;
-  --card: 0 0% 6.7%;
-  --card-foreground: 0 0% 100%;
-  --popover: 0 0% 6.7%;
-  --popover-foreground: 0 0% 100%;
-  --primary: 158 100% 35.5%;
-  --primary-foreground: 0 0% 100%;
-  --secondary: 0 0% 10.2%;
-  --secondary-foreground: 0 0% 100%;
-  --muted: 0 0% 10.2%;
-  --muted-foreground: 0 0% 61.6%;
-  --accent: 0 0% 12.2%;
-  --accent-foreground: 0 0% 100%;
-  --destructive: 0 84% 60%;
-  --destructive-foreground: 0 0% 100%;
-  --border: 0 0% 16.5%;
-  --input: 0 0% 6.7%;
-  --input-background: 0 0% 6.7%;
-  --switch-background: 0 0% 16.5%;
-  --ring: 158 100% 35.5%;
-  --sidebar: 0 0% 0%;
-  --sidebar-foreground: 0 0% 100%;
-  --sidebar-primary: 158 100% 35.5%;
-  --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 0 0% 10.2%;
-  --sidebar-accent-foreground: 0 0% 100%;
-  --sidebar-border: 0 0% 16.5%;
-  --sidebar-ring: 158 100% 35.5%;
+  /* Dark theme with Uber's approach - exact Figma values */
+  /* Core Colors - Dark theme Figma HEX values (with HSL fallbacks) */
+  --background: #000000; /* was: 0 0% 0% */
+  --background-hsl: 0 0% 0%; /* HSL fallback */
+  --foreground: #ffffff; /* was: 0 0% 100% */
+  --foreground-hsl: 0 0% 100%; /* HSL fallback */
+  --card: #111111; /* was: 0 0% 6.7% */
+  --card-hsl: 0 0% 6.7%; /* HSL fallback */
+  --card-foreground: #ffffff; /* was: 0 0% 100% */
+  --card-foreground-hsl: 0 0% 100%; /* HSL fallback */
+  --popover: #111111; /* was: 0 0% 6.7% */
+  --popover-hsl: 0 0% 6.7%; /* HSL fallback */
+  --popover-foreground: #ffffff; /* was: 0 0% 100% */
+  --popover-foreground-hsl: 0 0% 100%; /* HSL fallback */
+  --primary: #00b561; /* was: 158 100% 35.5% - same as light */
+  --primary-hsl: 158 100% 35.5%; /* HSL fallback */
+  --primary-foreground: #ffffff; /* was: 0 0% 100% */
+  --primary-foreground-hsl: 0 0% 100%; /* HSL fallback */
+  --secondary: #1a1a1a; /* was: 0 0% 10.2% */
+  --secondary-hsl: 0 0% 10.2%; /* HSL fallback */
+  --secondary-foreground: #ffffff; /* was: 0 0% 100% */
+  --secondary-foreground-hsl: 0 0% 100%; /* HSL fallback */
+  --muted: #1a1a1a; /* was: 0 0% 10.2% */
+  --muted-hsl: 0 0% 10.2%; /* HSL fallback */
+  --muted-foreground: #9ca3af; /* was: 0 0% 61.6% */
+  --muted-foreground-hsl: 0 0% 61.6%; /* HSL fallback */
+  --accent: #1f1f1f; /* was: 0 0% 12.2% */
+  --accent-hsl: 0 0% 12.2%; /* HSL fallback */
+  --accent-foreground: #ffffff; /* was: 0 0% 100% */
+  --accent-foreground-hsl: 0 0% 100%; /* HSL fallback */
+  --destructive: #ef4444; /* was: 0 84% 60% */
+  --destructive-hsl: 0 84% 60%; /* HSL fallback */
+  --destructive-foreground: #ffffff; /* was: 0 0% 100% */
+  --destructive-foreground-hsl: 0 0% 100%; /* HSL fallback */
+  --border: #2a2a2a; /* was: 0 0% 16.5% */
+  --border-hsl: 0 0% 16.5%; /* HSL fallback */
+  --input: #111111; /* was: 0 0% 6.7% */
+  --input-hsl: 0 0% 6.7%; /* HSL fallback */
+  --input-background: #111111; /* was: 0 0% 6.7% */
+  --input-background-hsl: 0 0% 6.7%; /* HSL fallback */
+  --switch-background: #2a2a2a; /* was: 0 0% 16.5% */
+  --switch-background-hsl: 0 0% 16.5%; /* HSL fallback */
+  --ring: #00b561; /* was: 158 100% 35.5% - same as light */
+  --ring-hsl: 158 100% 35.5%; /* HSL fallback */
+  --sidebar: #000000; /* was: 0 0% 0% */
+  --sidebar-hsl: 0 0% 0%; /* HSL fallback */
+  --sidebar-foreground: #ffffff; /* was: 0 0% 100% */
+  --sidebar-foreground-hsl: 0 0% 100%; /* HSL fallback */
+  --sidebar-primary: #00b561; /* was: 158 100% 35.5% */
+  --sidebar-primary-hsl: 158 100% 35.5%; /* HSL fallback */
+  --sidebar-primary-foreground: #ffffff; /* was: 0 0% 100% */
+  --sidebar-primary-foreground-hsl: 0 0% 100%; /* HSL fallback */
+  --sidebar-accent: #1a1a1a; /* was: 0 0% 10.2% */
+  --sidebar-accent-hsl: 0 0% 10.2%; /* HSL fallback */
+  --sidebar-accent-foreground: #ffffff; /* was: 0 0% 100% */
+  --sidebar-accent-foreground-hsl: 0 0% 100%; /* HSL fallback */
+  --sidebar-border: #2a2a2a; /* was: 0 0% 16.5% */
+  --sidebar-border-hsl: 0 0% 16.5%; /* HSL fallback */
+  --sidebar-ring: #00b561; /* was: 158 100% 35.5% */
+  --sidebar-ring-hsl: 158 100% 35.5%; /* HSL fallback */
 }

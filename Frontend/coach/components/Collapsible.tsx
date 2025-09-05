@@ -1,45 +1,55 @@
-import { PropsWithChildren, useState } from 'react';
-import { StyleSheet, TouchableOpacity } from 'react-native';
+/**
+ * Collapsible Component - MIGRATED ✅
+ * 
+ * MIGRATION NOTES:
+ * - Removed ThemedText and ThemedView in favor of direct components with NativeWind
+ * - Replaced hardcoded Colors with unified theme system
+ * - Uses CSS classes for consistent styling with Figma tokens
+ * - Simplified icon color logic using theme classes
+ */
 
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+import { PropsWithChildren, useState } from 'react';
+import { TouchableOpacity, View, Text } from 'react-native';
 import { IconSymbol } from '@/components/ui/IconSymbol';
-import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { useUnifiedColors } from '@/hooks/use-unified-theme';
 
 export function Collapsible({ children, title }: PropsWithChildren & { title: string }) {
   const [isOpen, setIsOpen] = useState(false);
-  const theme = useColorScheme() ?? 'light';
+  const colors = useUnifiedColors();
 
   return (
-    <ThemedView>
+    <View className="bg-background">
       <TouchableOpacity
-        style={styles.heading}
+        className="flex-row items-center gap-1.5"
         onPress={() => setIsOpen((value) => !value)}
-        activeOpacity={0.8}>
+        activeOpacity={0.8}
+      >
         <IconSymbol
           name="chevron.right"
           size={18}
           weight="medium"
-          color={theme === 'light' ? Colors.light.icon : Colors.dark.icon}
+          color={colors.tokens.mutedForeground} // Uses exact Figma muted color
           style={{ transform: [{ rotate: isOpen ? '90deg' : '0deg' }] }}
         />
 
-        <ThemedText type="defaultSemiBold">{title}</ThemedText>
+        <Text className="text-base font-semibold leading-6 text-foreground">
+          {title}
+        </Text>
       </TouchableOpacity>
-      {isOpen && <ThemedView style={styles.content}>{children}</ThemedView>}
-    </ThemedView>
+      
+      {isOpen && (
+        <View className="mt-1.5 ml-6 bg-background">
+          {children}
+        </View>
+      )}
+    </View>
   );
 }
 
-const styles = StyleSheet.create({
-  heading: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  content: {
-    marginTop: 6,
-    marginLeft: 24,
-  },
-});
+// ✅ MIGRATION COMPLETE: StyleSheet removed
+// All styling now uses NativeWind classes with unified theme tokens
+// flex-row = flexDirection: 'row'
+// items-center = alignItems: 'center' 
+// gap-1.5 = gap: 6px
+// mt-1.5 = marginTop: 6px
+// ml-6 = marginLeft: 24px
