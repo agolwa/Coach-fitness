@@ -87,7 +87,7 @@ function DataTable({ sets }: { sets: Set[] }) {
     return (
       <View className="items-center py-8">
         <Text className="text-muted-foreground">
-          No sets recorded for this exercise
+          No sets added yet. Tap to add sets.
         </Text>
       </View>
     );

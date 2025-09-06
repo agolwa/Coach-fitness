@@ -245,7 +245,7 @@ export interface UIStore extends UIState, UIActions {
 // Constants
 export const WORKOUT_CONSTANTS = {
   MAX_TITLE_LENGTH: 30,
-  DEFAULT_SETS_COUNT: 4,
+  DEFAULT_SETS_COUNT: 0,
   MIN_WEIGHT: 0,
   MAX_WEIGHT: 999,
   MIN_REPS: 0,
