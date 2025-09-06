@@ -3,13 +3,14 @@
  * Displays exercise details with sets, weight, reps, and notes in a data table format
  */
 
-import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import type { WorkoutExercise, Set } from '@/types/workout';
 import * as Haptics from 'expo-haptics';
 import { useUnifiedColors } from '@/hooks/use-unified-theme';
+import { useWorkoutStore } from '@/stores/workout-store';
 
 interface ExerciseLogCardProps {
   exercise: WorkoutExercise;
@@ -39,19 +40,31 @@ function EditIcon() {
   );
 }
 
-// Top Bar with Exercise Name and Edit Button
+// Top Bar with Exercise Name and Menu Button
 function TopBar({ 
   exerciseName, 
   setsCount,
-  onEdit 
+  onMenuToggle,
+  showDeleteMenu,
+  onDelete
 }: { 
   exerciseName: string;
   setsCount: number;
-  onEdit?: () => void;
+  onMenuToggle?: (event: any) => void;
+  showDeleteMenu?: boolean;
+  onDelete?: () => void;
 }) {
-  const handleEditPress = () => {
+  const colors = useUnifiedColors();
+
+  const handleMenuPress = (event: any) => {
+    event.stopPropagation();
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    onEdit?.();
+    onMenuToggle?.(event);
+  };
+
+  const handleDeletePress = (event: any) => {
+    event.stopPropagation();
+    onDelete?.();
   };
 
   return (
@@ -68,13 +81,37 @@ function TopBar({
         </View>
       </View>
       
-      <TouchableOpacity 
-        onPress={handleEditPress}
-        activeOpacity={0.7}
-        className="p-1 rounded-md"
-      >
-        <EditIcon />
-      </TouchableOpacity>
+      <View className="relative">
+        <TouchableOpacity 
+          onPress={handleMenuPress}
+          activeOpacity={0.7}
+          className="p-1 rounded-md"
+        >
+          <EditIcon />
+        </TouchableOpacity>
+        
+        {/* Delete Menu */}
+        {showDeleteMenu && (
+          <View className="absolute top-8 right-0 z-10">
+            <View className="bg-card border border-border rounded-lg shadow-lg min-w-28">
+              <TouchableOpacity 
+                onPress={handleDeletePress}
+                activeOpacity={0.7}
+                className="flex-row items-center px-4 py-3 gap-2"
+              >
+                <Ionicons 
+                  name="trash-outline" 
+                  size={16} 
+                  color={colors.tokens.destructive}
+                />
+                <Text className="text-sm font-medium" style={{ color: colors.tokens.destructive }}>
+                  Delete
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+      </View>
     </View>
   );
 }
@@ -154,6 +191,8 @@ function DataTable({ sets }: { sets: Set[] }) {
 // Main ExerciseLogCard Component
 export function ExerciseLogCard({ exercise }: ExerciseLogCardProps) {
   const router = useRouter();
+  const { deleteExercise } = useWorkoutStore();
+  const [showDeleteMenu, setShowDeleteMenu] = useState(false);
   const sets = exercise.sets || [];
 
   const handleEdit = () => {
@@ -168,16 +207,54 @@ export function ExerciseLogCard({ exercise }: ExerciseLogCardProps) {
     });
   };
 
+  const handleMenuToggle = () => {
+    setShowDeleteMenu(!showDeleteMenu);
+  };
+
+  const handleDelete = () => {
+    setShowDeleteMenu(false);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    
+    Alert.alert(
+      'Delete Exercise',
+      `Are you sure you want to delete "${exercise.name}"? This will remove all sets and cannot be undone.`,
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            deleteExercise(exercise.id);
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          },
+        },
+      ]
+    );
+  };
+
+  const handleCardPress = () => {
+    if (showDeleteMenu) {
+      setShowDeleteMenu(false);
+    } else {
+      handleEdit();
+    }
+  };
+
   return (
     <TouchableOpacity 
-      onPress={handleEdit}
+      onPress={handleCardPress}
       activeOpacity={0.95}
     >
       <View className="bg-card border border-border rounded-xl p-6">
         <TopBar 
           exerciseName={exercise.name}
           setsCount={sets.length}
-          onEdit={handleEdit}
+          onMenuToggle={handleMenuToggle}
+          showDeleteMenu={showDeleteMenu}
+          onDelete={handleDelete}
         />
         
         <Divider />
