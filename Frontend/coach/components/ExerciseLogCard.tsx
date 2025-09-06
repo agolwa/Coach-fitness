@@ -57,9 +57,6 @@ function TopBar({
           >
             {exerciseName}
           </Text>
-          <Text className="text-muted-foreground text-sm">
-            {setsCount} sets completed
-          </Text>
         </View>
       </View>
       
@@ -77,7 +74,7 @@ function TopBar({
 // Divider Line
 function Divider() {
   return (
-    <View className="w-full h-px bg-border opacity-60" />
+    <View className="w-full h-px bg-border opacity-60 my-4" />
   );
 }
 
@@ -85,7 +82,7 @@ function Divider() {
 function DataTable({ sets }: { sets: Set[] }) {
   if (sets.length === 0) {
     return (
-      <View className="items-center py-8">
+      <View className="items-center py-4">
         <Text className="text-muted-foreground">
           No sets added yet. Tap to add sets.
         </Text>
@@ -164,7 +161,7 @@ export function ExerciseLogCard({ exercise }: ExerciseLogCardProps) {
   };
 
   return (
-    <View className="bg-card border border-border rounded-xl p-6 mb-4">
+    <View className="bg-card border border-border rounded-xl p-6 mb-2">
       <TopBar 
         exerciseName={exercise.name}
         setsCount={sets.length}
@@ -173,7 +170,7 @@ export function ExerciseLogCard({ exercise }: ExerciseLogCardProps) {
       
       <Divider />
       
-      <View className="mt-4">
+      <View>
         <DataTable sets={sets} />
       </View>
     </View>
