@@ -381,7 +381,7 @@ export default function AddExercisesScreen() {
     return (
       <TouchableOpacity
         onPress={() => handleExerciseToggle(item.id)}
-        className={`bg-card rounded-lg p-4 mb-3 border-2 ${
+        className={`bg-card rounded-lg p-4 mb-3 border ${
           isSelected ? 'border-primary' : 'border-border'
         }`}
         activeOpacity={0.7}
@@ -398,11 +398,11 @@ export default function AddExercisesScreen() {
               {item.name}
             </Text>
             <View className="flex-row items-center">
-              <Text className="text-sm text-muted.foreground">
+              <Text className="text-sm text-foreground/60">
                 {item.muscle}
               </Text>
-              <View className="w-1 h-1 bg-muted.foreground rounded-full mx-2" />
-              <Text className="text-sm text-muted.foreground">
+              <View className="w-1 h-1 bg-foreground/60 rounded-full mx-2" />
+              <Text className="text-sm text-foreground/60">
                 {item.equipment}
               </Text>
             </View>
@@ -412,7 +412,7 @@ export default function AddExercisesScreen() {
           <View className={`w-6 h-6 rounded border-2 items-center justify-center ${
             isSelected 
               ? 'bg-primary border-primary' 
-              : 'border-muted.foreground'
+              : 'border-border'
           }`}>
             {isSelected && (
               <Ionicons 
@@ -469,7 +469,7 @@ export default function AddExercisesScreen() {
       className={`border rounded-xl px-4 py-3 flex-row items-center justify-between flex-1 ${
         isOpen ? 'border-primary bg-primary/5' : 'border-border bg-muted'
       }`}
-      style={{ minHeight: 48 }}
+      style={{ minHeight: 40 }}
       activeOpacity={0.7}
     >
       <Text className={`font-medium ${
