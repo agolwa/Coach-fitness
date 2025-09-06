@@ -161,7 +161,7 @@ export function ExerciseLogCard({ exercise }: ExerciseLogCardProps) {
   };
 
   return (
-    <View className="bg-card border border-border rounded-xl p-6 mb-2">
+    <View className="bg-card border border-border rounded-xl p-6">
       <TopBar 
         exerciseName={exercise.name}
         setsCount={sets.length}
