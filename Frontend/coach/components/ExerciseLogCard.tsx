@@ -6,8 +6,10 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import type { WorkoutExercise, Set } from '@/types/workout';
 import * as Haptics from 'expo-haptics';
+import { useUnifiedColors } from '@/hooks/use-unified-theme';
 
 interface ExerciseLogCardProps {
   exercise: WorkoutExercise;
@@ -24,9 +26,15 @@ function ExerciseIcon() {
 
 // Edit Icon Component  
 function EditIcon() {
+  const colors = useUnifiedColors();
+  
   return (
     <View className="p-1 rounded-md">
-      <Text className="text-muted-foreground text-base">✏️</Text>
+      <Ionicons 
+        name="ellipsis-vertical" 
+        size={20} 
+        color={colors.tokens.mutedForeground}
+      />
     </View>
   );
 }
@@ -84,7 +92,7 @@ function DataTable({ sets }: { sets: Set[] }) {
     return (
       <View className="items-center py-4">
         <Text className="text-muted-foreground">
-          No sets added yet. Tap to add sets.
+          Tap to add sets
         </Text>
       </View>
     );
@@ -161,18 +169,23 @@ export function ExerciseLogCard({ exercise }: ExerciseLogCardProps) {
   };
 
   return (
-    <View className="bg-card border border-border rounded-xl p-6">
-      <TopBar 
-        exerciseName={exercise.name}
-        setsCount={sets.length}
-        onEdit={handleEdit}
-      />
-      
-      <Divider />
-      
-      <View>
-        <DataTable sets={sets} />
+    <TouchableOpacity 
+      onPress={handleEdit}
+      activeOpacity={0.95}
+    >
+      <View className="bg-card border border-border rounded-xl p-6">
+        <TopBar 
+          exerciseName={exercise.name}
+          setsCount={sets.length}
+          onEdit={handleEdit}
+        />
+        
+        <Divider />
+        
+        <View>
+          <DataTable sets={sets} />
+        </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }
