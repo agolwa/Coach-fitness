@@ -332,19 +332,6 @@ export default function AddExercisesScreen() {
     }
   };
 
-  // Handle clear all filters
-  const handleClearFilters = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setSearchTerm('');
-    setDebouncedSearchTerm('');
-    setDropdown(prev => ({
-      ...prev,
-      muscle: 'All',
-      equipment: 'All',
-      showMuscleDropdown: false,
-      showEquipmentDropdown: false,
-    }));
-  }, []);
 
   // Toggle dropdown visibility
   const toggleMuscleDropdown = () => {
@@ -482,6 +469,7 @@ export default function AddExercisesScreen() {
       className={`border rounded-xl px-4 py-3 flex-row items-center justify-between flex-1 ${
         isOpen ? 'border-primary bg-primary/5' : 'border-border bg-muted'
       }`}
+      style={{ minHeight: 48 }}
       activeOpacity={0.7}
     >
       <Text className={`font-medium ${
@@ -536,8 +524,10 @@ export default function AddExercisesScreen() {
 
   return (
     <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
-      {/* Header */}
-      <View className="px-6 pt-4 pb-4 border-b border-border bg-background">
+      {/* Sticky Top Section - Header + Search + Filters */}
+      <View className="bg-background" style={{ zIndex: 10 }}>
+        {/* Header */}
+        <View className="px-6 pt-4 pb-4 border-b border-border">
           <View className="flex-row items-center justify-between">
             <View className="flex-row items-center">
               <TouchableOpacity 
@@ -558,46 +548,46 @@ export default function AddExercisesScreen() {
               <Text className="text-lg font-medium text-foreground">
                 Add exercises
               </Text>
-          </View>
-          
-          {selectedCount > 0 && (
-            <View className="bg-primary w-8 h-8 rounded-full items-center justify-center">
-              <Text className="text-white text-sm font-bold">
-                {selectedCount}
-              </Text>
             </View>
-          )}
+            
+            {selectedCount > 0 && (
+              <View className="bg-primary w-8 h-8 rounded-full items-center justify-center">
+                <Text className="text-white text-sm font-bold">
+                  {selectedCount}
+                </Text>
+              </View>
+            )}
+          </View>
         </View>
-      </View>
 
-      {/* Search Bar */}
-      <View className="px-6 py-4">
-        <View className="relative">
-          <Ionicons 
-            name="search" 
-            size={18} 
-            color={theme.colors.muted.foreground} 
-            style={{ position: 'absolute', left: 16, top: 14, zIndex: 1 }}
-          />
-          <TextInput
-            value={searchTerm}
-            onChangeText={handleSearch}
-            placeholder="Search exercises..."
-            placeholderTextColor={theme.colors.muted.foreground}
-            className="bg-muted border border-border rounded-xl pl-12 pr-4 py-3 text-foreground text-base"
-            selectionColor={theme.colors.primary}
-            autoCorrect={false}
-            autoCapitalize="none"
-            clearButtonMode="while-editing"
-            returnKeyType="search"
-          />
+        {/* Search Bar */}
+        <View className="px-6 py-4">
+          <View className="relative">
+            <Ionicons 
+              name="search" 
+              size={18} 
+              color={theme.colors.muted.foreground} 
+              style={{ position: 'absolute', left: 16, top: 14, zIndex: 1 }}
+            />
+            <TextInput
+              value={searchTerm}
+              onChangeText={handleSearch}
+              placeholder="Search exercises..."
+              placeholderTextColor={theme.colors.muted.foreground}
+              className="bg-muted border border-border rounded-xl pl-12 pr-4 py-3 text-foreground text-base"
+              selectionColor={theme.colors.primary}
+              autoCorrect={false}
+              autoCapitalize="none"
+              clearButtonMode="while-editing"
+              returnKeyType="search"
+            />
+          </View>
         </View>
-      </View>
 
-      {/* Filter Section */}
-      <View className="px-6 pb-4 relative">
+        {/* Filter Section */}
+        <View className="px-6 pb-4 relative">
         {/* Dropdown Buttons */}
-        <View className="flex-row mb-4 gap-3">
+        <View className="flex-row gap-3">
           <View className="flex-1 relative">
             {renderDropdownButton({
               label: dropdown.muscle,
@@ -607,7 +597,7 @@ export default function AddExercisesScreen() {
             
             {/* Muscle Dropdown */}
             {dropdown.showMuscleDropdown && (
-              <View className="absolute top-full left-0 right-0 bg-card border border-border rounded-xl mt-1 z-50 shadow-lg">
+              <View className="absolute top-full left-0 right-0 bg-card border border-border rounded-xl mt-1 shadow-lg" style={{ zIndex: 100 }}>
                 {muscleOptions.map((option, index) => (
                   <View key={option.value}>
                     {renderDropdownOption({
@@ -630,7 +620,7 @@ export default function AddExercisesScreen() {
             
             {/* Equipment Dropdown */}
             {dropdown.showEquipmentDropdown && (
-              <View className="absolute top-full left-0 right-0 bg-card border border-border rounded-xl mt-1 z-50 shadow-lg">
+              <View className="absolute top-full left-0 right-0 bg-card border border-border rounded-xl mt-1 shadow-lg" style={{ zIndex: 100 }}>
                 {equipmentOptions.map((option, index) => (
                   <View key={option.value}>
                     {renderDropdownOption({
@@ -645,47 +635,22 @@ export default function AddExercisesScreen() {
           </View>
         </View>
         
-        {/* Clear Filters Button */}
-        {(dropdown.muscle !== 'All' || dropdown.equipment !== 'All' || searchTerm !== '') && (
-          <View className="flex-row justify-end mb-3">
-            <TouchableOpacity
-              onPress={handleClearFilters}
-              className="bg-muted border border-border rounded-lg px-4 py-2 flex-row items-center"
-              activeOpacity={0.7}
-            >
-              <Ionicons 
-                name="close" 
-                size={16} 
-                color={theme.colors.foreground} 
-              />
-              <Text className="text-foreground ml-2">Clear Filters</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {/* Exercise Count */}
-        <View className="flex-row items-center">
-          <Text className="text-muted.foreground text-sm">
-            {searchTerm || dropdown.muscle !== 'All' || dropdown.equipment !== 'All' ? (
-              `Showing ${filteredExercises.length} of ${exercises.length} exercises`
-            ) : (
-              `${exercises.length} exercises`
-            )}
-          </Text>
-        </View>
+      </View>
       </View>
 
-      {/* Exercise List */}
+      {/* Exercise List - Separate from sticky section */}
       <TouchableOpacity 
         activeOpacity={1} 
         onPress={closeDropdowns}
         className="flex-1"
+        style={{ marginTop: 32 }}
       >
         <FlatList
           data={filteredExercises}
           renderItem={renderExerciseItem}
           keyExtractor={(item) => item.id.toString()}
           contentContainerStyle={{ 
+            paddingTop: 16,
             paddingHorizontal: 24, 
             paddingBottom: selectedCount > 0 ? 100 : 24 
           }}
@@ -706,15 +671,6 @@ export default function AddExercisesScreen() {
                   : 'Try adjusting your filters'
                 }
               </Text>
-              {(searchTerm || dropdown.muscle !== 'All' || dropdown.equipment !== 'All') && (
-                <TouchableOpacity
-                  onPress={handleClearFilters}
-                  className="bg-muted px-4 py-2 rounded-lg mt-4"
-                  activeOpacity={0.7}
-                >
-                  <Text className="text-primary font-medium">Clear all filters</Text>
-                </TouchableOpacity>
-              )}
             </View>
           }
         />
