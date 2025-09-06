@@ -244,32 +244,6 @@ export default function AddExercisesScreen() {
     }
   }, [exercises, exerciseStore]);
 
-  // Handle select all exercises
-  const handleSelectAll = useCallback(() => {
-    try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      // Select all filtered exercises
-      filteredExercises.forEach(exercise => {
-        if (!exercise.selected) {
-          exerciseStore.toggleExerciseSelection(exercise.id);
-        }
-      });
-    } catch (error) {
-      console.error('Error selecting all exercises:', error);
-      Alert.alert('Error', 'Failed to select all exercises.');
-    }
-  }, [filteredExercises, exerciseStore]);
-
-  // Handle clear all selections
-  const handleClearSelection = useCallback(() => {
-    try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      exerciseStore.clearSelection();
-    } catch (error) {
-      console.error('Error clearing selection:', error);
-      Alert.alert('Error', 'Failed to clear selection.');
-    }
-  }, [exerciseStore]);
 
   // Handle adding selected exercises to workout
   const handleAddExercises = useCallback(() => {
@@ -689,8 +663,8 @@ export default function AddExercisesScreen() {
           </View>
         )}
 
-        {/* Exercise Count and Actions */}
-        <View className="flex-row items-center justify-between">
+        {/* Exercise Count */}
+        <View className="flex-row items-center">
           <Text className="text-muted.foreground text-sm">
             {searchTerm || dropdown.muscle !== 'All' || dropdown.equipment !== 'All' ? (
               `Showing ${filteredExercises.length} of ${exercises.length} exercises`
@@ -698,27 +672,6 @@ export default function AddExercisesScreen() {
               `${exercises.length} exercises`
             )}
           </Text>
-          
-          {filteredExercises.length > 0 && (
-            <View className="flex-row">
-              <TouchableOpacity 
-                onPress={handleSelectAll}
-                className="mr-3"
-                activeOpacity={0.7}
-              >
-                <Text className="text-primary text-sm font-medium">Select All</Text>
-              </TouchableOpacity>
-              
-              {selectedCount > 0 && (
-                <TouchableOpacity 
-                  onPress={handleClearSelection}
-                  activeOpacity={0.7}
-                >
-                  <Text className="text-red-500 text-sm font-medium">Clear ({selectedCount})</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          )}
         </View>
       </View>
 
