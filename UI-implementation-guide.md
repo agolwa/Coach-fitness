@@ -514,4 +514,145 @@ ThemeClassManager.getInstance().setColorScheme(colorScheme);
 
 ---
 
-*Last updated: After implementing native dark theme support with root-level class application*
+---
+
+## 🔧 Theme System Troubleshooting & Fixes
+
+### Critical Learning: Unified Theme System Migration
+
+**Issue Pattern**: `"Cannot read property 'colors' of undefined"` and `"Cannot read property 'mutedForeground' of undefined"`
+
+**Root Cause Analysis:**
+1. **Old Hook Usage**: Files using `useTheme` from `@/hooks/use-theme` instead of the unified system
+2. **Incorrect Color Access**: Accessing `theme.colors.property` when `theme` doesn't exist in the new system  
+3. **Inconsistent Patterns**: Some files using old patterns while others use new unified system
+
+**Solution Pattern (Applied to Multiple Files):**
+
+**Before (❌ Causes Errors):**
+```tsx
+import { useTheme } from '@/hooks/use-theme';
+
+export default function Component() {
+  const { theme } = useTheme();
+  const colors = theme.colors; // ❌ theme.colors doesn't exist
+  
+  return (
+    <Ionicons 
+      color={colors.tokens.mutedForeground} // ❌ colors is undefined
+    />
+  );
+}
+```
+
+**After (✅ Works Correctly):**
+```tsx
+import { useUnifiedColors } from '@/hooks/use-unified-theme';
+
+export default function Component() {
+  const colors = useUnifiedColors(); // ✅ Direct color access
+  
+  return (
+    <Ionicons 
+      color={colors.tokens.mutedForeground} // ✅ Correct token access
+    />
+  );
+}
+```
+
+### Files Successfully Fixed Using This Pattern:
+
+1. **`app/_layout.tsx`** - Main app layout
+   - Changed: `useTheme` → `useUnifiedTheme`
+   - Fixed navigation context errors during theme switching
+
+2. **`components/StoreProvider.tsx`** - Loading screen component
+   - Changed: `useTheme` → `useUnifiedColors`
+   - Updated: `theme.colors.*` → `colors.legacy.*`
+
+3. **`app/(modal)/workout-detail.tsx`** - Workout detail modal
+   - Changed: `useTheme` → `useUnifiedColors` 
+   - Removed: `const colors = theme.colors;` assignment
+   - All existing `colors.tokens.*` references worked immediately
+
+4. **`app/(modal)/add-exercises.tsx`** - Exercise selection modal
+   - Changed: `useTheme` → `useUnifiedColors`
+   - Updated all: `theme.colors.property` → `colors.tokens.property`
+
+### Diagnostic Process:
+
+**Step 1: Identify Theme Import Pattern**
+```bash
+# Check which hook is being used
+grep -r "import.*useTheme" app/
+grep -r "import.*useUnifiedColors" app/
+```
+
+**Step 2: Find Hook Usage**
+```bash
+# Look for problematic patterns
+grep -r "const.*theme.*=.*useTheme" app/
+grep -r "theme.colors" app/
+```
+
+**Step 3: Apply Consistent Fix**
+1. Update import statement
+2. Change hook usage pattern  
+3. Update all color references
+4. Remove redundant assignments
+
+### Working vs Problematic Files:
+
+**✅ Working Pattern (All tabs, most modals):**
+```tsx
+import { useUnifiedColors } from '@/hooks/use-unified-theme';
+const colors = useUnifiedColors();
+// Access: colors.tokens.propertyName
+```
+
+**❌ Problematic Pattern (Fixed files):**
+```tsx
+import { useTheme } from '@/hooks/use-theme';
+const { theme } = useTheme();
+const colors = theme.colors; // Undefined!
+```
+
+### Color Token Reference Guide:
+
+**Correct Token Access:**
+- `colors.tokens.primary` - Primary brand color
+- `colors.tokens.foreground` - Main text color
+- `colors.tokens.mutedForeground` - Secondary text color
+- `colors.tokens.background` - Page background color
+- `colors.tokens.card` - Card background color
+- `colors.tokens.border` - Border color
+- `colors.tokens.destructive` - Error/delete color
+
+**Legacy Access (for compatibility):**
+- `colors.legacy.primary.DEFAULT` - Primary with nested structure
+- `colors.legacy.muted.foreground` - Nested color structure
+
+### Prevention Checklist:
+
+**For New Components:**
+- [ ] Always use `useUnifiedColors` for color access
+- [ ] Never use `useTheme` from `@/hooks/use-theme`
+- [ ] Access colors via `colors.tokens.*` pattern
+- [ ] Follow existing working component patterns
+
+**For Existing Components:**
+- [ ] Audit import statements for old theme hooks
+- [ ] Check for `theme.colors` access patterns  
+- [ ] Verify all color references use unified system
+- [ ] Test theme switching functionality
+
+### Key Success Factors:
+
+1. **Consistent Pattern Application**: All working screens use the same hook and access pattern
+2. **Complete Migration**: Mixing old and new patterns causes errors
+3. **Token-Based Access**: Using `colors.tokens.*` provides the most stable access
+4. **Following Working Examples**: Profile screen, activity screen, and feedback modal are good reference implementations
+
+---
+
+*Last updated: After successfully fixing theme system errors across multiple components (workout-detail, add-exercises, StoreProvider, _layout)*

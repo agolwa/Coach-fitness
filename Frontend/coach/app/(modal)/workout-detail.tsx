@@ -22,7 +22,7 @@ import { Haptics } from 'expo-haptics';
 // Store imports
 import { useWorkoutStore } from '@/stores/workout-store';
 import { useUserStore } from '@/stores/user-store';
-import { useTheme } from '@/hooks/use-theme';
+import { useUnifiedColors } from '@/hooks/use-unified-theme';
 
 // Type imports
 import type { WorkoutHistoryItem, WorkoutExercise } from '@/types/workout';
@@ -34,7 +34,7 @@ export default function WorkoutDetailScreen() {
   // Store state
   const workoutStore = useWorkoutStore();
   const userStore = useUserStore();
-  const { theme } = useTheme();
+  const colors = useUnifiedColors();
   
   // Local state
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -224,7 +224,6 @@ export default function WorkoutDetailScreen() {
     );
   };
 
-  const colors = theme.colors;
 
   return (
     <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>

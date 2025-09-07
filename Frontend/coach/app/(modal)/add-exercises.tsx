@@ -25,7 +25,7 @@ import { APIError } from '@/services/api-client';
 import { getErrorMessage } from '@/services/error-utils';
 import { useWorkoutStore } from '@/stores/workout-store';
 import { useUserStore } from '@/stores/user-store';
-import { useTheme } from '@/hooks/use-theme';
+import { useUnifiedColors } from '@/hooks/use-unified-theme';
 import type { SelectedExercise } from '@/types/workout';
 
 // Dropdown option types
@@ -46,7 +46,7 @@ interface DropdownState {
 
 export default function AddExercisesScreen() {
   const insets = useSafeAreaInsets();
-  const { theme } = useTheme();
+  const colors = useUnifiedColors();
   
   // Store hooks
   const exerciseStore = useExerciseStore();
@@ -478,7 +478,7 @@ export default function AddExercisesScreen() {
       <Ionicons 
         name={isOpen ? "chevron-up" : "chevron-down"} 
         size={16} 
-        color={isOpen ? theme.colors.primary : theme.colors.foreground} 
+        color={isOpen ? colors.tokens.primary : colors.tokens.foreground} 
       />
     </TouchableOpacity>
   );
@@ -488,7 +488,7 @@ export default function AddExercisesScreen() {
     return (
       <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
         <View className="flex-1 items-center justify-center px-6">
-          <ActivityIndicator size="large" color={theme.colors.primary} />
+          <ActivityIndicator size="large" color={colors.tokens.primary} />
           <Text className="text-muted.foreground mt-4 text-center">
             Loading exercise database...
           </Text>
@@ -505,7 +505,7 @@ export default function AddExercisesScreen() {
     return (
       <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
         <View className="flex-1 items-center justify-center px-6">
-          <Ionicons name="warning" size={48} color={theme.colors.muted.foreground} />
+          <Ionicons name="warning" size={48} color={colors.tokens.mutedForeground} />
           <Text className="text-foreground text-lg font-semibold mt-4 text-center">No Exercises Available</Text>
           <Text className="text-muted.foreground text-center mt-2">
             Unable to load the exercise database.
@@ -542,7 +542,7 @@ export default function AddExercisesScreen() {
                 <Ionicons 
                   name="arrow-back" 
                   size={24} 
-                  color={theme.colors.foreground} 
+                  color={colors.tokens.foreground} 
                 />
               </TouchableOpacity>
               <Text className="text-lg font-medium text-foreground">
@@ -566,16 +566,16 @@ export default function AddExercisesScreen() {
             <Ionicons 
               name="search" 
               size={18} 
-              color={theme.colors.muted.foreground} 
+              color={colors.tokens.mutedForeground} 
               style={{ position: 'absolute', left: 16, top: 14, zIndex: 1 }}
             />
             <TextInput
               value={searchTerm}
               onChangeText={handleSearch}
               placeholder="Search exercises..."
-              placeholderTextColor={theme.colors.muted.foreground}
+              placeholderTextColor={colors.tokens.mutedForeground}
               className="bg-muted border border-border rounded-xl pl-12 pr-4 py-3 text-foreground text-base"
-              selectionColor={theme.colors.primary}
+              selectionColor={colors.tokens.primary}
               autoCorrect={false}
               autoCapitalize="none"
               clearButtonMode="while-editing"
@@ -660,7 +660,7 @@ export default function AddExercisesScreen() {
               <Ionicons 
                 name="search" 
                 size={48} 
-                color={theme.colors.muted.foreground} 
+                color={colors.tokens.mutedForeground} 
               />
               <Text className="text-foreground text-center mt-4 text-lg font-medium">
                 No exercises found
@@ -705,7 +705,7 @@ export default function AddExercisesScreen() {
             }}
             className="absolute top-1 right-3"
           >
-            <Ionicons name="close" size={16} color={theme.colors.background} />
+            <Ionicons name="close" size={16} color={colors.tokens.background} />
           </TouchableOpacity>
         </View>
       )}
