@@ -16,7 +16,7 @@ import * as Haptics from 'expo-haptics';
 
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/use-user';
-import { useTheme } from '@/hooks/use-theme';
+import { useUnifiedTheme } from '@/hooks/use-unified-theme';
 import AuthService from '@/services/auth-service';
 import { cn } from '@/components/ui/utils';
 
@@ -30,7 +30,7 @@ export function AuthControls({
   onSignOut 
 }: AuthControlsProps) {
   const { authState, isSignedIn, isGuest, signOut } = useAuth();
-  const { theme } = useTheme();
+  const { newTokens } = useUnifiedTheme();
   const router = useRouter();
   const [isSigningOut, setIsSigningOut] = useState(false);
 
@@ -102,7 +102,7 @@ export function AuthControls({
     
     return {
       statusText: isSignedIn ? 'Signed In' : isGuest ? 'Guest Mode' : 'Not Signed In',
-      statusColor: isSignedIn ? theme.colors.primary.DEFAULT : isGuest ? '#f59e0b' : theme.colors.muted.foreground,
+      statusColor: isSignedIn ? newTokens.colors.primary : isGuest ? newTokens.colors.warning : newTokens.colors.mutedForeground,
       icon: isSignedIn ? 'checkmark-circle' : isGuest ? 'warning' : 'person-circle-outline',
       limitations,
     };

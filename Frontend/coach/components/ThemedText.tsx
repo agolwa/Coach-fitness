@@ -1,6 +1,7 @@
 import { StyleSheet, Text, type TextProps } from 'react-native';
 
 import { useThemeColor } from '@/hooks/useThemeColor';
+import { useUnifiedColors } from '@/hooks/use-unified-theme';
 
 export type ThemedTextProps = TextProps & {
   lightColor?: string;
@@ -16,11 +17,12 @@ export function ThemedText({
   ...rest
 }: ThemedTextProps) {
   const color = useThemeColor({ light: lightColor, dark: darkColor }, 'text');
+  const colors = useUnifiedColors();
 
   return (
     <Text
       style={[
-        { color },
+        { color: type === 'link' ? colors.tokens.link : color },
         type === 'default' ? styles.default : undefined,
         type === 'title' ? styles.title : undefined,
         type === 'defaultSemiBold' ? styles.defaultSemiBold : undefined,
@@ -55,6 +57,6 @@ const styles = StyleSheet.create({
   link: {
     lineHeight: 30,
     fontSize: 16,
-    color: '#0a7ea4',
+    // Color will be applied dynamically from theme tokens
   },
 });

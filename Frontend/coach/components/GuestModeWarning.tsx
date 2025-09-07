@@ -14,7 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
 import { Button } from '@/components/ui/button';
-import { useTheme } from '@/hooks/use-theme';
+import { useUnifiedColors } from '@/hooks/use-unified-theme';
 import { cn } from '@/components/ui/utils';
 
 export interface GuestModeWarningProps {
@@ -34,7 +34,7 @@ export function GuestModeWarning({
   message = "You're using guest mode. Sign up to save your workouts, access history, and sync across devices.",
   showSignUpButton = true,
 }: GuestModeWarningProps) {
-  const { theme } = useTheme();
+  const colors = useUnifiedColors();
 
   const handleClose = async () => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -70,7 +70,7 @@ export function GuestModeWarning({
               <Ionicons 
                 name="warning-outline" 
                 size={32} 
-                color="#f59e0b" 
+                color={colors.tokens.warning} 
               />
             </View>
           </View>
@@ -187,7 +187,7 @@ export function GuestWarningBanner({
         <Ionicons 
           name="information-circle-outline" 
           size={20} 
-          color="#f59e0b"
+          color={colors.tokens.warning}
           style={{ marginRight: 8 }}
         />
         
@@ -215,7 +215,7 @@ export function GuestWarningBanner({
             <Ionicons 
               name="close" 
               size={16} 
-              color="#f59e0b"
+              color={colors.tokens.warning}
             />
           </TouchableOpacity>
         )}

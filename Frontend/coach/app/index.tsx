@@ -7,10 +7,10 @@ import { useEffect } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
 import { useUserStore } from '@/stores/user-store';
-import { useTheme } from '@/hooks/use-theme';
+import { useUnifiedTheme } from '@/hooks/use-unified-theme';
 
 export default function RootIndex() {
-  const { theme } = useTheme();
+  const { legacyTheme } = useUnifiedTheme();
   const { authState, isLoading } = useUserStore();
 
   useEffect(() => {
@@ -35,12 +35,12 @@ export default function RootIndex() {
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: theme.colors.background,
+        backgroundColor: legacyTheme.colors.background,
       }}
     >
       <ActivityIndicator 
         size="large" 
-        color={theme.colors.primary.DEFAULT} 
+        color={legacyTheme.colors.primary.DEFAULT} 
       />
     </View>
   );

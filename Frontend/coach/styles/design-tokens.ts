@@ -50,6 +50,18 @@ export const designTokens = {
       // Focus ring
       ring: '#00b561',
       
+      // Warning/Guest mode colors
+      warning: '#f59e0b',
+      warningForeground: '#ffffff',
+      
+      // Link colors
+      link: '#0a7ea4',
+      linkForeground: '#ffffff',
+      
+      // Switch colors
+      switchTrackInactive: '#e2e8f0',
+      switchTrackActive: '#10b981',
+      
       // Chart colors for data visualization
       chart1: '#00b561',
       chart2: '#059669',
@@ -105,6 +117,18 @@ export const designTokens = {
       
       // Focus ring (same as light)
       ring: '#00b561',
+      
+      // Warning/Guest mode colors
+      warning: '#f59e0b',
+      warningForeground: '#000000',
+      
+      // Link colors - adjusted for dark theme
+      link: '#38bdf8',
+      linkForeground: '#000000',
+      
+      // Switch colors - dark theme variants
+      switchTrackInactive: '#374151',
+      switchTrackActive: '#10b981',
       
       // Chart colors (consistent across themes)
       chart1: '#00b561',

@@ -3,11 +3,11 @@
  * These match the exact typography specifications from the Figma design
  */
 
-import { useTheme } from '@/hooks/use-theme';
+import { useUnifiedTheme } from '@/hooks/use-unified-theme';
 import { TextStyle } from 'react-native';
 
 export const useFigmaStyles = () => {
-  const { isDark } = useTheme();
+  const { isDark } = useUnifiedTheme();
 
   const styles = {
     // Exercise Name - Inter SemiBold, 16px

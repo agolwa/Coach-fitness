@@ -21,7 +21,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useUserStore } from '@/stores/user-store';
-import { useThemeColors } from '@/hooks/use-theme';
+import { useUnifiedColors } from '@/hooks/use-unified-theme';
 import { auth } from '@/services/supabase';
 import { apiClient, GoogleAuthRequest, LoginResponse } from '@/services/api-client';
 import * as Haptics from 'expo-haptics';
@@ -43,7 +43,7 @@ function GoogleIcon({ size = 20 }: GoogleIconProps) {
 export default function SignupScreen() {
   const insets = useSafeAreaInsets();
   const { continueAsGuest, signIn } = useUserStore();
-  const colors = useThemeColors();
+  const colors = useUnifiedColors();
   const [isSigningIn, setIsSigningIn] = useState(false);
 
   // Listen to auth state changes
@@ -184,7 +184,7 @@ export default function SignupScreen() {
   return (
     <View style={{ 
       flex: 1, 
-      backgroundColor: colors.background,
+      backgroundColor: colors.legacy.background,
       maxWidth: 440,
       alignSelf: 'center',
       width: '100%',
@@ -211,7 +211,7 @@ export default function SignupScreen() {
             <Ionicons 
               name="arrow-back" 
               size={24} 
-              color={colors.foreground} 
+              color={colors.legacy.foreground} 
             />
           </TouchableOpacity>
         </View>
@@ -237,7 +237,7 @@ export default function SignupScreen() {
             <View style={{
               width: 96,
               height: 96,
-              backgroundColor: colors.primary.DEFAULT,
+              backgroundColor: colors.legacy.primary.DEFAULT,
               borderRadius: 16,
               flexDirection: 'row',
               alignItems: 'center',
@@ -256,14 +256,14 @@ export default function SignupScreen() {
             <Text style={{
               fontSize: 28,
               fontWeight: 'bold',
-              color: colors.foreground,
+              color: colors.legacy.foreground,
               marginBottom: 8
             }}>
               VoiceLog
             </Text>
             <Text style={{
               fontSize: 16,
-              color: colors.muted.foreground
+              color: colors.legacy.muted.foreground
             }}>
               AI-powered workout logging
             </Text>
@@ -274,14 +274,14 @@ export default function SignupScreen() {
             <Text style={{
               fontSize: 24,
               fontWeight: '600',
-              color: colors.foreground,
+              color: colors.legacy.foreground,
               marginBottom: 8
             }}>
               Welcome to VoiceLog
             </Text>
             <Text style={{
               fontSize: 16,
-              color: colors.muted.foreground,
+              color: colors.legacy.muted.foreground,
               textAlign: 'center',
               maxWidth: width * 0.7,
               lineHeight: 22
@@ -307,9 +307,9 @@ export default function SignupScreen() {
               disabled={isSigningIn}
               style={{
                 width: '100%',
-                backgroundColor: colors.card.DEFAULT,
+                backgroundColor: colors.tokens.card,
                 borderWidth: 1,
-                borderColor: colors.border,
+                borderColor: colors.tokens.border,
                 borderRadius: 8,
                 paddingHorizontal: 24,
                 paddingVertical: 16,
@@ -324,14 +324,14 @@ export default function SignupScreen() {
               {isSigningIn ? (
                 <ActivityIndicator 
                   size="small" 
-                  color={colors.foreground} 
+                  color={colors.legacy.foreground} 
                 />
               ) : (
                 <GoogleIcon size={20} />
               )}
               
               <Text style={{
-                color: colors.foreground,
+                color: colors.legacy.foreground,
                 fontWeight: '500',
                 fontSize: 16,
                 marginLeft: 12
@@ -351,7 +351,7 @@ export default function SignupScreen() {
                 width: '100%',
                 backgroundColor: 'transparent',
                 borderWidth: 1,
-                borderColor: colors.border,
+                borderColor: colors.tokens.border,
                 borderRadius: 8,
                 paddingHorizontal: 24,
                 paddingVertical: 16,
@@ -363,7 +363,7 @@ export default function SignupScreen() {
               activeOpacity={0.8}
             >
               <Text style={{
-                color: colors.muted.foreground,
+                color: colors.legacy.muted.foreground,
                 fontWeight: '500',
                 fontSize: 16
               }}>
@@ -380,7 +380,7 @@ export default function SignupScreen() {
           }}>
             <Text style={{
               fontSize: 12,
-              color: colors.muted.foreground,
+              color: colors.legacy.muted.foreground,
               textAlign: 'center',
               lineHeight: 18
             }}>
@@ -398,7 +398,7 @@ export default function SignupScreen() {
         <View style={{ alignItems: 'center' }}>
           <Text style={{
             fontSize: 12,
-            color: colors.muted.foreground
+            color: colors.legacy.muted.foreground
           }}>
             Made with ❤️ for fitness enthusiasts
           </Text>

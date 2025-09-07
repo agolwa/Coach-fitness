@@ -495,7 +495,7 @@ export default function ProfileScreen() {
                       }
                     }}
                     disabled={updateProfileMutation.isPending}
-                    trackColor={{ false: '#e2e8f0', true: '#10b981' }}
+                    trackColor={{ false: colors.tokens.switchTrackInactive, true: colors.tokens.switchTrackActive }}
                     thumbColor={Platform.OS === 'ios' ? colors.tokens.background : colorScheme === 'dark' ? colors.tokens.background : colors.tokens.mutedBackground}
                   />
                   <Ionicons 
