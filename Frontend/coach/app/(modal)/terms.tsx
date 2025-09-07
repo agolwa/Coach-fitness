@@ -15,13 +15,11 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 // Hooks
-import { useTheme } from '@/hooks/use-theme';
+import { useUnifiedColors } from '@/hooks/use-unified-theme';
 
 export default function TermsScreen() {
   const insets = useSafeAreaInsets();
-  const { theme } = useTheme();
-
-  const colors = theme.colors;
+  const colors = useUnifiedColors();
 
   return (
     <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
@@ -36,7 +34,7 @@ export default function TermsScreen() {
             <Ionicons 
               name="arrow-back" 
               size={24} 
-              color={colors.foreground} 
+              color={colors.tokens.foreground} 
             />
           </TouchableOpacity>
           <Text className="text-foreground text-xl font-medium">Terms and Conditions</Text>

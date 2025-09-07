@@ -415,9 +415,103 @@ Based on Tailwind's default 4px base:
 1. **Always check existing well-implemented pages first** before creating new components
 2. **Reuse existing patterns** rather than creating new ones
 3. **Test on both iOS and Android** to ensure consistent appearance
-4. **Dark mode is not yet implemented** - use only light theme values for now
+4. **Dark mode is fully implemented** - follow the dark theme implementation patterns
 5. **Run linter regularly** with `npm run lint` to catch common issues
 
 ---
 
-*Last updated: After refactoring exercise-detail.tsx to match design system patterns*
+---
+
+## 🌙 Dark Theme Implementation
+
+### Critical Implementation Patterns
+
+**Root-Level Dark Class Application (Native)**
+The dark theme requires applying the `dark` class at the app root to enable CSS variables:
+
+```tsx
+// In app/_layout.tsx - AppContent component
+return (
+  <View className={colorScheme === 'dark' ? 'dark flex-1' : 'flex-1'}>
+    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+      {/* App content */}
+    </ThemeProvider>
+  </View>
+);
+```
+
+**Key Learnings:**
+- **Native platforms need explicit class application**: Unlike web, React Native requires the `dark` class on a parent View to cascade CSS variables
+- **ThemeClassManager only handles web**: For native, the `dark` class must be applied at component level
+- **CSS Variables cascade correctly**: Once the `dark` class is applied, all child components automatically get dark theme values
+- **NativeWind Configuration is already correct**: `darkMode: 'class'` in `tailwind.config.js` enables class-based dark mode
+
+### Dark Theme Architecture
+
+**1. Theme Detection & Storage**
+```tsx
+// theme-store.ts handles system preference detection
+const systemColorScheme = Appearance.getColorScheme() || 'light';
+
+// ThemeClassManager syncs with theme store
+ThemeClassManager.getInstance().setColorScheme(colorScheme);
+```
+
+**2. CSS Variables System**
+```css
+/* global.css - Variables automatically switch based on .dark class */
+:root {
+  --background: #ffffff; /* Light theme values */
+}
+
+.dark {
+  --background: #000000; /* Dark theme values */
+}
+```
+
+**3. Component Usage**
+```tsx
+// Components automatically adapt when dark class is present
+<View className="bg-background"> // Uses CSS variable
+<Text className="text-foreground"> // Switches automatically
+```
+
+### Dark Theme Best Practices
+
+**✅ DO:**
+- Apply `dark` class at root View level for native apps
+- Use Tailwind classes that reference CSS variables (`bg-background`, `text-foreground`)
+- Let CSS variables handle the theme switching automatically
+- Test theme switching on actual devices/simulators
+
+**❌ DON'T:**
+- Try to manually apply dark classes to individual components
+- Use conditional styling based on theme state in components
+- Forget to wrap the app content in a themed View container
+- Assume web and native work the same way
+
+### Testing Dark Mode
+
+1. **Toggle Theme**: Use in-app theme switcher
+2. **Verify CSS Variables**: Check that `bg-background`, `text-foreground` etc. switch correctly
+3. **Test Navigation**: Ensure theme persists across route changes
+4. **Check Modals**: Modal screens should inherit dark theme
+5. **Validate Icons**: Ensure icon colors update with theme
+
+### Common Dark Mode Issues & Solutions
+
+**Issue: Dark theme not working on native**
+- **Root Cause**: Missing `dark` class application at app root
+- **Solution**: Wrap app content in `<View className={isDark ? 'dark flex-1' : 'flex-1'}>`
+
+**Issue: Some components don't switch themes**
+- **Root Cause**: Using hardcoded colors instead of CSS variables
+- **Solution**: Use Tailwind classes that reference CSS variables
+
+**Issue: Icons stay same color**
+- **Root Cause**: Hardcoded color values in icon components
+- **Solution**: Use `colors.tokens.foreground` or similar theme-aware colors
+
+---
+
+*Last updated: After implementing native dark theme support with root-level class application*

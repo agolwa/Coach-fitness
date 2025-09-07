@@ -20,11 +20,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { Haptics } from 'expo-haptics';
 
 // Hooks
-import { useTheme } from '@/hooks/use-theme';
+import { useUnifiedColors } from '@/hooks/use-unified-theme';
 
 export default function FeedbackScreen() {
   const insets = useSafeAreaInsets();
-  const { theme } = useTheme();
+  const colors = useUnifiedColors();
   
   // State
   const [suggestion, setSuggestion] = useState('');
@@ -32,8 +32,6 @@ export default function FeedbackScreen() {
   
   const maxCharacters = 250;
   const remainingCharacters = maxCharacters - suggestion.length;
-
-  const colors = theme.colors;
 
   // Validate input to only allow text and numbers (NO LINE BREAKS)
   const validateInput = (text: string): string => {
@@ -133,7 +131,7 @@ export default function FeedbackScreen() {
             <Ionicons 
               name="arrow-back" 
               size={24} 
-              color={colors.foreground} 
+              color={colors.tokens.foreground} 
             />
           </TouchableOpacity>
           <Text className="text-foreground text-xl font-medium">Feedback & Requests</Text>
@@ -183,7 +181,7 @@ export default function FeedbackScreen() {
                 numberOfLines={6}
                 maxLength={maxCharacters}
                 style={{
-                  color: colors.foreground,
+                  color: colors.tokens.foreground,
                   fontSize: 16,
                   lineHeight: 22,
                   textAlignVertical: 'top',

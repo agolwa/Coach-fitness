@@ -17,13 +17,11 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 // Hooks
-import { useTheme } from '@/hooks/use-theme';
+import { useUnifiedColors } from '@/hooks/use-unified-theme';
 
 export default function ContactScreen() {
   const insets = useSafeAreaInsets();
-  const { theme } = useTheme();
-
-  const colors = theme.colors;
+  const colors = useUnifiedColors();
 
   // Handle contact methods
   const handleEmailPress = (email: string) => {
@@ -97,7 +95,7 @@ export default function ContactScreen() {
             <Ionicons 
               name="arrow-back" 
               size={24} 
-              color={colors.foreground} 
+              color={colors.tokens.foreground} 
             />
           </TouchableOpacity>
           <Text className="text-foreground text-xl font-medium">Contact Us</Text>

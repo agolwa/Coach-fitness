@@ -1,3 +1,5 @@
+import React from 'react';
+import { View } from 'react-native';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
@@ -9,6 +11,7 @@ import '../global.css';
 import { useTheme } from '@/hooks/use-theme';
 import { StoreProvider, useStoreInitialization, StoreLoadingScreen } from '@/components/StoreProvider';
 import { useUserStore } from '@/stores/user-store';
+import { initializeThemeClassManager } from '@/utils/theme-class-manager';
 
 // QueryClient configuration for React Query
 const queryClient = new QueryClient({
@@ -59,16 +62,18 @@ function AppContent() {
   }
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <StatusBar style={isDark ? 'light' : 'dark'} />
-      <Stack>
-        <Stack.Screen name="index" options={{ headerShown: false }} />
-        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="(modal)" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
-      </Stack>
-    </ThemeProvider>
+    <View className={colorScheme === 'dark' ? 'dark flex-1' : 'flex-1'}>
+      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+        <StatusBar style={isDark ? 'light' : 'dark'} />
+        <Stack>
+          <Stack.Screen name="index" options={{ headerShown: false }} />
+          <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="(modal)" options={{ headerShown: false }} />
+          <Stack.Screen name="+not-found" />
+        </Stack>
+      </ThemeProvider>
+    </View>
   );
 }
 
@@ -76,6 +81,11 @@ export default function RootLayout() {
   const [loaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
+
+  // Initialize theme class manager early
+  React.useEffect(() => {
+    initializeThemeClassManager();
+  }, []);
 
   if (!loaded) {
     // Async font loading only occurs in development.

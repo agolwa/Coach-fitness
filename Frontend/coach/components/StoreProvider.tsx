@@ -1,6 +1,7 @@
 /**
  * Store Provider Component
  * Initializes and manages all Zustand stores for the application
+ * Enhanced with theme class synchronization
  */
 
 import React, { useEffect, useCallback } from 'react';
@@ -11,6 +12,7 @@ import { useExerciseStore } from '../stores/exercise-store';
 import { useThemeStore } from '../stores/theme-store';
 import { useNavigationStore } from '../stores/navigation-store';
 import { useTheme } from '../hooks/use-theme';
+import { useThemeClassManager } from '../utils/theme-class-manager';
 
 interface StoreProviderProps {
   children: React.ReactNode;
@@ -22,6 +24,10 @@ export function StoreProvider({ children }: StoreProviderProps) {
   const loadExercises = useExerciseStore(state => state.loadExercises);
   const initializeTheme = useThemeStore(state => state.initializeTheme);
   const initializeNavigation = useNavigationStore(state => state.initializeNavigation);
+
+  // Theme class manager for synchronization
+  const { manager } = useThemeClassManager();
+  const currentColorScheme = useThemeStore(state => state.colorScheme);
 
   // Sync weight unit changes between workout and user stores
   const workoutExercises = useWorkoutStore(state => state.exercises);
@@ -61,6 +67,11 @@ export function StoreProvider({ children }: StoreProviderProps) {
     const hasActiveWorkout = workoutExercises.length > 0;
     setCanChangeWeightUnit(!hasActiveWorkout);
   }, [workoutExercises.length, setCanChangeWeightUnit]);
+
+  // Synchronize theme class manager with theme store changes
+  useEffect(() => {
+    manager.setColorScheme(currentColorScheme);
+  }, [currentColorScheme, manager]);
 
   return <>{children}</>;
 }

@@ -6,34 +6,32 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { HapticTab } from '@/components/HapticTab';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import TabBarBackground from '@/components/ui/TabBarBackground';
-import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { useUnifiedColors } from '@/hooks/use-unified-theme';
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
+  const colors = useUnifiedColors();
   const insets = useSafeAreaInsets();
 
   return (
     <Tabs
       screenOptions={{
-        // Simplified color scheme matching original design
-        tabBarActiveTintColor: colorScheme === 'dark' ? '#FFFFFF' : '#0F172A',
-        tabBarInactiveTintColor: colorScheme === 'dark' ? '#64748B' : '#6B7280',
+        tabBarActiveTintColor: colors.tokens.foreground,
+        tabBarInactiveTintColor: colors.tokens.mutedForeground,
         headerShown: false,
         tabBarButton: HapticTab,
         tabBarBackground: TabBarBackground,
         tabBarStyle: {
           height: Platform.select({
-            ios: 50 + insets.bottom, // Use actual safe area insets
+            ios: 50 + insets.bottom,
             default: 60,
           }),
           paddingBottom: Platform.select({
-            ios: insets.bottom, // Use actual safe area bottom inset
+            ios: insets.bottom,
             default: 8,
           }),
           paddingHorizontal: 16,
           borderTopWidth: 1,
-          borderTopColor: colorScheme === 'dark' ? '#374151' : '#E5E7EB',
+          borderTopColor: colors.tokens.border,
           backgroundColor: 'transparent',
         },
       }}>

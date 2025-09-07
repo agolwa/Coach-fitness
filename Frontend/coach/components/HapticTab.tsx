@@ -1,31 +1,19 @@
 import { BottomTabBarButtonProps } from '@react-navigation/bottom-tabs';
-import { PlatformPressable } from '@react-navigation/elements';
 import * as Haptics from 'expo-haptics';
-import { Platform } from 'react-native';
+import { Platform, TouchableOpacity } from 'react-native';
 
 export function HapticTab(props: BottomTabBarButtonProps) {
   return (
-    <PlatformPressable
+    <TouchableOpacity
       {...props}
       onPressIn={(ev) => {
         // Add haptic feedback for both iOS and Android
-        if (Platform.OS === 'ios') {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        } else if (Platform.OS === 'android') {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        }
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         props.onPressIn?.(ev);
       }}
-      style={[
-        props.style,
-        {
-          // Enhanced touch target for better accessibility
-          minHeight: 56,
-          flex: 1,
-          justifyContent: 'center',
-          alignItems: 'center',
-        },
-      ]}
+      activeOpacity={0.8}
+      className="flex-1 justify-center items-center min-h-14"
+      style={props.style}
     />
   );
 }

@@ -1,27 +1,26 @@
 import React from 'react';
 import { View, Platform, StyleSheet } from 'react-native';
 import { BlurView } from 'expo-blur';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { useUnifiedColors, useUnifiedTheme } from '@/hooks/use-unified-theme';
 
 export default function TabBarBackground() {
-  const colorScheme = useColorScheme();
+  const colors = useUnifiedColors();
+  const { colorScheme, isDark } = useUnifiedTheme();
   
-  // On iOS, use a blur effect with proper styling
+  // On iOS, use a blur effect with theme-aware styling
   if (Platform.OS === 'ios') {
     return (
       <BlurView 
         intensity={100} 
-        tint={colorScheme === 'dark' ? 'dark' : 'light'}
+        tint={isDark ? 'dark' : 'light'} // Now properly responds to theme
         style={StyleSheet.absoluteFillObject}
       />
     );
   }
   
-  // On other platforms, use a solid background with border
+  // On other platforms, use a solid background with border (already theme-aware with CSS classes)
   return (
-    <View 
-      className={`absolute inset-0 bg-background border-t border-border`}
-    />
+    <View className="absolute inset-0 bg-background border-t border-border" />
   );
 }
 
