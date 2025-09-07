@@ -15,10 +15,10 @@ import {
   Text,
   TextInput,
   ScrollView,
-  Pressable,
   Alert,
   StatusBar,
   ActivityIndicator,
+  TouchableOpacity,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -27,8 +27,8 @@ import * as Haptics from 'expo-haptics';
 
 import { useWorkoutStore } from '../../stores/workout-store';
 import { useUserStore } from '../../stores/user-store';
-import { useTheme } from '../../hooks/use-theme';
-import type { DetailSet, WorkoutExercise, WeightUnit } from '../../types/workout';
+import { useUnifiedColors } from '../../hooks/use-unified-theme';
+import type { DetailSet } from '../../types/workout';
 
 // Set interface for this screen
 interface Set {
@@ -45,17 +45,13 @@ export default function ExerciseDetailScreen() {
     exerciseName?: string;
   }>();
   const insets = useSafeAreaInsets();
-  const { theme, colorScheme } = useTheme();
-  const colors = theme.colors;
-  const isDark = colorScheme === 'dark';
+  const colors = useUnifiedColors();
   
   // Store hooks
   const { 
     exercises, 
     updateExerciseSets, 
     isLoading,
-    error,
-    clearError,
   } = useWorkoutStore();
   const { weightUnit } = useUserStore();
   
@@ -332,251 +328,256 @@ export default function ExerciseDetailScreen() {
       className="bg-background flex-1"
       style={{ paddingTop: insets.top }}
     >
-      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
+      <StatusBar barStyle="dark-content" />
       
       {/* Header */}
-      <View className="px-6 py-4 flex-row items-center gap-4 border-b border-border/10">
-        <Pressable
-          onPress={handleBack}
-          className="p-2 -m-2 rounded-lg active:bg-accent"
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
-          <Ionicons 
-            name="arrow-back" 
-            size={24} 
-            color={colors.foreground} 
-          />
-        </Pressable>
-        <Text className="text-foreground text-lg font-medium flex-1" numberOfLines={1}>
-          {exerciseName}
-        </Text>
+      <View className="px-6 py-4">
+        <View className="flex-row items-center justify-between">
+          <TouchableOpacity
+            onPress={handleBack}
+            className="p-2 -m-2 rounded-lg"
+            activeOpacity={0.7}
+          >
+            <Ionicons 
+              name="arrow-back" 
+              size={24} 
+              color={colors.tokens.foreground} 
+            />
+          </TouchableOpacity>
+          
+          <Text className="text-foreground text-lg font-semibold">
+            {exerciseName}
+          </Text>
+          
+          <View className="w-6" />
+        </View>
       </View>
 
       {/* Today Section */}
-      <View className="px-6 py-4">
-        <View className="relative">
-          <Text className="text-muted-foreground text-sm mb-2">Today</Text>
-          <View className="absolute bottom-0 left-0 w-12 h-1 bg-primary rounded-full" />
-        </View>
+      <View className="px-6 mb-4">
+        <Text className="text-muted-foreground text-base font-medium">Today&apos;s Sets</Text>
       </View>
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         {/* Weight and Reps Controls */}
-        <View className="px-6 py-6">
-          <View className="flex-row gap-8">
-            {/* Weight Control */}
-            <View className="flex-1 space-y-4">
-              <Text className="text-muted-foreground text-xs uppercase tracking-wider">
-                Weight ({weightUnitDisplay})
-              </Text>
-              <View className="flex-row items-center justify-center gap-4">
-                <Pressable
-                  onPress={() => handleWeightChange(-1)}
-                  className="w-12 h-12 border border-border rounded-lg items-center justify-center active:bg-accent"
-                  hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
-                >
-                  <Ionicons name="remove" size={20} color={colors.muted.foreground} />
-                </Pressable>
-                
-                {isEditingWeight ? (
-                  <TextInput
-                    value={weightInput}
-                    onChangeText={handleWeightInputChange}
-                    onBlur={handleWeightInputSubmit}
-                    onSubmitEditing={handleWeightInputSubmit}
-                    className="text-4xl font-medium text-foreground min-w-[80px] text-center bg-transparent border-b-2 border-primary"
-                    keyboardType="numeric"
-                    autoFocus
-                    selectTextOnFocus
-                  />
-                ) : (
-                  <Pressable
-                    onPress={handleWeightClick}
-                    className="min-w-[80px] py-1 px-2 rounded active:bg-accent/50"
+        <View className="px-6 mb-6">
+          <View className="bg-card border border-border rounded-xl p-6">
+            <View className="flex-row gap-8">
+              {/* Weight Control */}
+              <View className="flex-1">
+                <Text className="text-muted-foreground text-sm font-medium mb-4">
+                  Weight ({weightUnitDisplay})
+                </Text>
+                <View className="flex-row items-center justify-center gap-3">
+                  <TouchableOpacity
+                    onPress={() => handleWeightChange(-1)}
+                    className="w-12 h-12 bg-secondary border border-border rounded-lg items-center justify-center"
+                    activeOpacity={0.7}
                   >
-                    <Text className="text-4xl font-medium text-foreground text-center">
-                      {isBodyweightExercise() && weight === 0 ? 'BW' : weight}
-                    </Text>
-                  </Pressable>
-                )}
-                
-                <Pressable
-                  onPress={() => handleWeightChange(1)}
-                  className="w-12 h-12 border border-border rounded-lg items-center justify-center active:bg-accent"
-                  hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
-                >
-                  <Ionicons name="add" size={20} color={colors.muted.foreground} />
-                </Pressable>
+                    <Ionicons name="remove" size={20} color={colors.tokens.mutedForeground} />
+                  </TouchableOpacity>
+                  
+                  {isEditingWeight ? (
+                    <TextInput
+                      value={weightInput}
+                      onChangeText={handleWeightInputChange}
+                      onBlur={handleWeightInputSubmit}
+                      onSubmitEditing={handleWeightInputSubmit}
+                      className="text-3xl font-semibold text-foreground min-w-[80px] text-center bg-transparent border-b-2 border-primary"
+                      keyboardType="numeric"
+                      autoFocus
+                      selectTextOnFocus
+                      style={{ color: colors.tokens.foreground }}
+                    />
+                  ) : (
+                    <TouchableOpacity
+                      onPress={handleWeightClick}
+                      className="min-w-[80px] py-2"
+                      activeOpacity={0.7}
+                    >
+                      <Text className="text-3xl font-semibold text-foreground text-center">
+                        {isBodyweightExercise() && weight === 0 ? 'BW' : weight}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                  
+                  <TouchableOpacity
+                    onPress={() => handleWeightChange(1)}
+                    className="w-12 h-12 bg-secondary border border-border rounded-lg items-center justify-center"
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="add" size={20} color={colors.tokens.mutedForeground} />
+                  </TouchableOpacity>
+                </View>
               </View>
-            </View>
 
-            {/* Reps Control */}
-            <View className="flex-1 space-y-4">
-              <Text className="text-muted-foreground text-xs uppercase tracking-wider">
-                Reps
-              </Text>
-              <View className="flex-row items-center justify-center gap-4">
-                <Pressable
-                  onPress={() => handleRepsChange(-1)}
-                  className="w-12 h-12 border border-border rounded-lg items-center justify-center active:bg-accent"
-                  hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
-                >
-                  <Ionicons name="remove" size={20} color={colors.muted.foreground} />
-                </Pressable>
-                
-                {isEditingReps ? (
-                  <TextInput
-                    value={repsInput}
-                    onChangeText={handleRepsInputChange}
-                    onBlur={handleRepsInputSubmit}
-                    onSubmitEditing={handleRepsInputSubmit}
-                    className="text-4xl font-medium text-foreground min-w-[80px] text-center bg-transparent border-b-2 border-primary"
-                    keyboardType="numeric"
-                    autoFocus
-                    selectTextOnFocus
-                  />
-                ) : (
-                  <Pressable
-                    onPress={handleRepsClick}
-                    className="min-w-[80px] py-1 px-2 rounded active:bg-accent/50"
+              {/* Reps Control */}
+              <View className="flex-1">
+                <Text className="text-muted-foreground text-sm font-medium mb-4">
+                  Reps
+                </Text>
+                <View className="flex-row items-center justify-center gap-3">
+                  <TouchableOpacity
+                    onPress={() => handleRepsChange(-1)}
+                    className="w-12 h-12 bg-secondary border border-border rounded-lg items-center justify-center"
+                    activeOpacity={0.7}
                   >
-                    <Text className="text-4xl font-medium text-foreground text-center">
-                      {reps}
-                    </Text>
-                  </Pressable>
-                )}
-                
-                <Pressable
-                  onPress={() => handleRepsChange(1)}
-                  className="w-12 h-12 border border-border rounded-lg items-center justify-center active:bg-accent"
-                  hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
-                >
-                  <Ionicons name="add" size={20} color={colors.muted.foreground} />
-                </Pressable>
+                    <Ionicons name="remove" size={20} color={colors.tokens.mutedForeground} />
+                  </TouchableOpacity>
+                  
+                  {isEditingReps ? (
+                    <TextInput
+                      value={repsInput}
+                      onChangeText={handleRepsInputChange}
+                      onBlur={handleRepsInputSubmit}
+                      onSubmitEditing={handleRepsInputSubmit}
+                      className="text-3xl font-semibold text-foreground min-w-[80px] text-center bg-transparent border-b-2 border-primary"
+                      keyboardType="numeric"
+                      autoFocus
+                      selectTextOnFocus
+                      style={{ color: colors.tokens.foreground }}
+                    />
+                  ) : (
+                    <TouchableOpacity
+                      onPress={handleRepsClick}
+                      className="min-w-[80px] py-2"
+                      activeOpacity={0.7}
+                    >
+                      <Text className="text-3xl font-semibold text-foreground text-center">
+                        {reps}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                  
+                  <TouchableOpacity
+                    onPress={() => handleRepsChange(1)}
+                    className="w-12 h-12 bg-secondary border border-border rounded-lg items-center justify-center"
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="add" size={20} color={colors.tokens.mutedForeground} />
+                  </TouchableOpacity>
+                </View>
               </View>
             </View>
           </View>
         </View>
 
         {/* Notes Input */}
-        <View className="px-6 py-4">
-          <View className="space-y-3">
-            <Text className="text-muted-foreground text-xs uppercase tracking-wider">
+        <View className="px-6 mb-6">
+          <View className="bg-card border border-border rounded-xl p-4">
+            <Text className="text-muted-foreground text-sm font-medium mb-3">
               Notes (Optional)
             </Text>
             <TextInput
               value={notes}
               onChangeText={setNotes}
               placeholder="Add notes about this set..."
-              placeholderTextColor={colors.muted.foreground}
-              className="border border-border rounded-lg px-4 py-3 text-foreground bg-background min-h-[80px]"
+              placeholderTextColor={colors.tokens.mutedForeground}
+              className="text-foreground bg-transparent min-h-[80px]"
               multiline
               numberOfLines={3}
               textAlignVertical="top"
+              style={{ color: colors.tokens.foreground }}
             />
           </View>
         </View>
 
         {/* Action Buttons */}
-        <View className="px-6 py-4">
+        <View className="px-6 mb-6">
           <View className="flex-row gap-4">
-            <Pressable
+            <TouchableOpacity
               onPress={isUpdateMode ? handleUpdateSet : handleAddSet}
               disabled={isUpdateMode && !isUpdateEnabled}
-              className={`flex-1 h-12 rounded-lg items-center justify-center ${
-                isUpdateMode
-                  ? isUpdateEnabled
-                    ? 'bg-primary'
-                    : 'bg-muted opacity-50'
+              className={`flex-1 py-3 rounded-xl items-center justify-center ${
+                (isUpdateMode && !isUpdateEnabled) 
+                  ? 'bg-muted' 
                   : 'bg-primary'
               }`}
-              style={{
-                opacity: (isUpdateMode && !isUpdateEnabled) ? 0.5 : 1,
-              }}
+              activeOpacity={0.8}
             >
-              <Text className="text-primary-foreground font-medium">
-                {isUpdateMode ? 'Update' : 'Add'}
-              </Text>
-            </Pressable>
-            <Pressable
-              onPress={handleDeleteSet}
-              disabled={!isDeleteEnabled}
-              className={`flex-1 h-12 rounded-lg border items-center justify-center ${
-                isDeleteEnabled 
-                  ? 'border-destructive bg-transparent' 
-                  : 'border-border bg-muted opacity-50'
-              }`}
-              style={{
-                opacity: isDeleteEnabled ? 1 : 0.5,
-              }}
-            >
-              <Text className={`font-medium ${
-                isDeleteEnabled ? 'text-destructive' : 'text-muted-foreground'
+              <Text className={`font-semibold ${
+                (isUpdateMode && !isUpdateEnabled)
+                  ? 'text-muted-foreground'
+                  : 'text-primary-foreground'
               }`}>
-                Delete
+                {isUpdateMode ? 'Update Set' : 'Add Set'}
               </Text>
-            </Pressable>
+            </TouchableOpacity>
+            
+            {isDeleteEnabled && (
+              <TouchableOpacity
+                onPress={handleDeleteSet}
+                className="flex-1 py-3 rounded-xl border border-destructive items-center justify-center"
+                activeOpacity={0.8}
+              >
+                <Text className="text-destructive font-semibold">
+                  Delete Set
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
 
         {/* Sets List */}
-        <View className="flex-1 px-6">
-          <View className="space-y-3 pt-3 pb-6">
-            {currentSets.map((set, index) => (
-              <Pressable
-                key={set.id}
-                onPress={() => handleSetSelect(set.id)}
-                className={`bg-card rounded-lg p-4 border ${
-                  selectedSetId === set.id
-                    ? 'border-primary bg-primary/5'
-                    : 'border-border/20 active:bg-accent/20'
-                }`}
-                style={{
-                  shadowColor: '#000',
-                  shadowOffset: {
-                    width: 0,
-                    height: selectedSetId === set.id ? 4 : 2,
-                  },
-                  shadowOpacity: selectedSetId === set.id ? 0.15 : 0.1,
-                  shadowRadius: selectedSetId === set.id ? 8 : 4,
-                  elevation: selectedSetId === set.id ? 8 : 2,
-                }}
-              >
-                <View className="space-y-2">
+        <View className="px-6 pb-6">
+          {currentSets.length > 0 && (
+            <>
+              <Text className="text-muted-foreground text-base font-medium mb-4">
+                Completed Sets
+              </Text>
+              
+              {currentSets.map((set, index) => (
+                <TouchableOpacity
+                  key={set.id}
+                  onPress={() => handleSetSelect(set.id)}
+                  className={`bg-card border rounded-xl p-4 mb-3 ${
+                    selectedSetId === set.id
+                      ? 'border-primary'
+                      : 'border-border'
+                  }`}
+                  activeOpacity={0.7}
+                >
                   <View className="flex-row items-center justify-between">
-                    <View className="flex-row items-center gap-4">
-                      <View className="w-8 h-8 bg-primary/10 rounded-full items-center justify-center">
-                        <Text className="text-sm font-medium text-primary">
+                    <View className="flex-row items-center gap-3">
+                      <View className="w-10 h-10 bg-primary/10 rounded-full items-center justify-center">
+                        <Text className="text-primary font-semibold">
                           {index + 1}
                         </Text>
                       </View>
-                      <Text className="text-foreground">
-                        {isBodyweightExercise() && set.weight === 0 
-                          ? 'Bodyweight' 
-                          : `${set.weight} ${weightUnit}`
-                        }
-                      </Text>
+                      <View>
+                        <Text className="text-foreground font-medium">
+                          {isBodyweightExercise() && set.weight === 0 
+                            ? 'Bodyweight' 
+                            : `${set.weight} ${weightUnit}`
+                          }
+                        </Text>
+                        <Text className="text-muted-foreground text-sm">
+                          {set.reps} reps
+                        </Text>
+                      </View>
                     </View>
-                    <Text className="text-foreground">
-                      {set.reps} reps
-                    </Text>
+                    {selectedSetId === set.id && (
+                      <View className="bg-primary/10 px-2 py-1 rounded">
+                        <Text className="text-primary text-xs font-medium">Selected</Text>
+                      </View>
+                    )}
                   </View>
                   {set.notes && (
-                    <Text className="text-sm text-muted-foreground pl-12" numberOfLines={2}>
+                    <Text className="text-muted-foreground text-sm mt-2" numberOfLines={2}>
                       {set.notes}
                     </Text>
                   )}
-                </View>
-              </Pressable>
-            ))}
-          </View>
+                </TouchableOpacity>
+              ))}
+            </>
+          )}
         </View>
       </ScrollView>
 
       {/* Loading overlay */}
       {isLoading && (
         <View className="absolute inset-0 bg-background/80 items-center justify-center">
-          <ActivityIndicator size="large" color={colors.primary.DEFAULT} />
+          <ActivityIndicator size="large" color={colors.tokens.primary} />
         </View>
       )}
     </View>

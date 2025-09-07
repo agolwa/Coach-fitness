@@ -54,11 +54,20 @@ export function platformClasses(
 export function withOpacity(color: string, opacity: number): string {
   // For HSL colors, we modify the alpha channel
   if (color.startsWith('hsl(')) {
-    return color.replace('hsl(', `hsla(`).replace(')', `, ${opacity})`);
+    // Convert hsl(h, s%, l%) to hsla(h, s%, l%, opacity)
+    return color.replace('hsl(', 'hsla(').replace(')', `, ${opacity})`);
+  }
+  
+  // For hex colors, convert to rgba
+  if (color.startsWith('#')) {
+    const hex = color.slice(1);
+    const r = parseInt(hex.slice(0, 2), 16);
+    const g = parseInt(hex.slice(2, 4), 16);
+    const b = parseInt(hex.slice(4, 6), 16);
+    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
   }
   
   // For other color formats, return as-is
-  // In a real implementation, you might want more sophisticated color handling
   return color;
 }
 
