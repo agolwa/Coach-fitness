@@ -8,7 +8,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import 'react-native-reanimated';
 import '../global.css';
 
-import { useTheme } from '@/hooks/use-theme';
+import { useUnifiedTheme } from '@/hooks/use-unified-theme';
 import { StoreProvider, useStoreInitialization, StoreLoadingScreen } from '@/components/StoreProvider';
 import { useUserStore } from '@/stores/user-store';
 import { initializeThemeClassManager } from '@/utils/theme-class-manager';
@@ -49,7 +49,7 @@ const queryClient = new QueryClient({
 });
 
 function AppContent() {
-  const { colorScheme, isDark } = useTheme();
+  const { colorScheme, isDark } = useUnifiedTheme();
   const { isInitialized, hasErrors } = useStoreInitialization();
   const { authState, isLoading } = useUserStore();
 

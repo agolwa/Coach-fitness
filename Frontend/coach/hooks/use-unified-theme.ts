@@ -76,7 +76,7 @@ export const useUnifiedTheme = () => {
         
         for (const part of pathParts) {
           if (value && typeof value === 'object') {
-            value = value[part] || value.DEFAULT;
+            value = value[part] || (value.DEFAULT !== undefined ? value.DEFAULT : value);
           } else {
             break;
           }

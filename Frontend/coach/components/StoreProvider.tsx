@@ -11,7 +11,7 @@ import { useUserStore } from '../stores/user-store';
 import { useExerciseStore } from '../stores/exercise-store';
 import { useThemeStore } from '../stores/theme-store';
 import { useNavigationStore } from '../stores/navigation-store';
-import { useTheme } from '../hooks/use-theme';
+import { useUnifiedTheme, useUnifiedColors } from '../hooks/use-unified-theme';
 import { useThemeClassManager } from '../utils/theme-class-manager';
 
 interface StoreProviderProps {
@@ -104,7 +104,7 @@ export function useStoreInitialization() {
  * Loading screen component for store initialization
  */
 export function StoreLoadingScreen() {
-  const { theme } = useTheme();
+  const colors = useUnifiedColors();
 
   return (
     <View 
@@ -112,18 +112,18 @@ export function StoreLoadingScreen() {
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: theme.colors.background,
+        backgroundColor: colors.legacy.background,
         paddingHorizontal: 20,
       }}
     >
       <View style={{ alignItems: 'center' }}>
         <ActivityIndicator 
           size="large" 
-          color={theme.colors.primary.DEFAULT}
+          color={colors.legacy.primary.DEFAULT}
           style={{ marginBottom: 16 }}
         />
         <Text style={{ 
-          color: theme.colors.muted.foreground,
+          color: colors.legacy.muted.foreground,
           fontSize: 16,
           textAlign: 'center'
         }}>

@@ -286,12 +286,12 @@ export default function WorkoutDetailScreen() {
                         activeOpacity={0.7}
                       >
                         {isLoading ? (
-                          <ActivityIndicator size="small" color={colors.primary.DEFAULT} />
+                          <ActivityIndicator size="small" color={colors.tokens.primary} />
                         ) : (
                           <Ionicons 
                             name="checkmark" 
                             size={20} 
-                            color={colors.primary.DEFAULT} 
+                            color={colors.tokens.primary} 
                           />
                         )}
                       </TouchableOpacity>
@@ -304,7 +304,7 @@ export default function WorkoutDetailScreen() {
                         <Ionicons 
                           name="close" 
                           size={20} 
-                          color={colors.muted.foreground} 
+                          color={colors.tokens.mutedForeground} 
                         />
                       </TouchableOpacity>
                     </View>
@@ -324,7 +324,7 @@ export default function WorkoutDetailScreen() {
                         <Ionicons 
                           name="pencil" 
                           size={16} 
-                          color={colors.muted.foreground} 
+                          color={colors.tokens.mutedForeground} 
                         />
                       </TouchableOpacity>
                     </View>
@@ -336,7 +336,7 @@ export default function WorkoutDetailScreen() {
                   <Ionicons 
                     name="calendar-outline" 
                     size={16} 
-                    color={colors.muted.foreground} 
+                    color={colors.tokens.mutedForeground} 
                   />
                   <Text className="text-muted-foreground">
                     {workout.date}
@@ -348,7 +348,7 @@ export default function WorkoutDetailScreen() {
                     <Ionicons 
                       name="time-outline" 
                       size={16} 
-                      color={colors.muted.foreground} 
+                      color={colors.tokens.mutedForeground} 
                     />
                     <Text className="text-muted-foreground text-sm">
                       {workout.duration}
@@ -358,7 +358,7 @@ export default function WorkoutDetailScreen() {
                     <Ionicons 
                       name="pulse-outline" 
                       size={16} 
-                      color={colors.muted.foreground} 
+                      color={colors.tokens.mutedForeground} 
                     />
                     <Text className="text-muted-foreground text-sm">
                       {workout.exercises.length} exercises
@@ -402,7 +402,7 @@ export default function WorkoutDetailScreen() {
           >
             {isLoading ? (
               <>
-                <ActivityIndicator size="small" color={colors.muted.foreground} />
+                <ActivityIndicator size="small" color={colors.tokens.mutedForeground} />
                 <Text className="text-muted-foreground font-medium">Adding...</Text>
               </>
             ) : (

@@ -152,7 +152,7 @@ export default function FeedbackScreen() {
                 <Ionicons 
                   name="lightbulb-outline" 
                   size={24} 
-                  color={colors.primary.DEFAULT} 
+                  color={colors.tokens.primary} 
                 />
               </View>
               <View className="flex-1">
@@ -176,7 +176,7 @@ export default function FeedbackScreen() {
                 value={suggestion}
                 onChangeText={handleTextChange}
                 placeholder="Share your feedback or feature idea..."
-                placeholderTextColor={colors.muted.foreground}
+                placeholderTextColor={colors.tokens.mutedForeground}
                 multiline={true}
                 numberOfLines={6}
                 maxLength={maxCharacters}
@@ -245,7 +245,7 @@ export default function FeedbackScreen() {
                 <Ionicons 
                   name="hourglass-outline" 
                   size={20} 
-                  color={colors.primary.foreground} 
+                  color={colors.tokens.primaryForeground} 
                 />
                 <Text className="text-primary-foreground font-semibold">
                   Submitting...
@@ -256,7 +256,7 @@ export default function FeedbackScreen() {
                 <Ionicons 
                   name="send-outline" 
                   size={20} 
-                  color={colors.primary.foreground} 
+                  color={colors.tokens.primaryForeground} 
                 />
                 <Text className="text-primary-foreground font-semibold">
                   Submit Feedback
@@ -281,7 +281,7 @@ export default function FeedbackScreen() {
               <Ionicons 
                 name="mail-outline" 
                 size={16} 
-                color={colors.primary.DEFAULT} 
+                color={colors.tokens.primary} 
               />
               <Text className="text-primary font-medium">
                 feedback@fitlogger.com

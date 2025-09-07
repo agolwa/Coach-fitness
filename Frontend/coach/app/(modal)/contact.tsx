@@ -124,7 +124,7 @@ export default function ContactScreen() {
                 <Ionicons 
                   name="headset-outline" 
                   size={24} 
-                  color={colors.primary.DEFAULT} 
+                  color={colors.tokens.primary} 
                 />
               </View>
               <Text className="text-foreground text-base font-medium">Customer Support</Text>
@@ -142,7 +142,7 @@ export default function ContactScreen() {
                 <Ionicons 
                   name="mail-outline" 
                   size={18} 
-                  color={colors.primary.DEFAULT} 
+                  color={colors.tokens.primary} 
                 />
                 <Text className="text-primary font-medium">support@fitlogger.com</Text>
               </TouchableOpacity>
@@ -154,7 +154,7 @@ export default function ContactScreen() {
                 <Ionicons 
                   name="call-outline" 
                   size={18} 
-                  color={colors.primary.DEFAULT} 
+                  color={colors.tokens.primary} 
                 />
                 <Text className="text-primary font-medium">+1 (555) 348-5644</Text>
               </TouchableOpacity>
@@ -162,7 +162,7 @@ export default function ContactScreen() {
                 <Ionicons 
                   name="time-outline" 
                   size={18} 
-                  color={colors.muted.foreground} 
+                  color={colors.tokens.mutedForeground} 
                 />
                 <Text className="text-muted-foreground">Mon-Fri, 9 AM - 6 PM PST</Text>
               </View>
@@ -170,7 +170,7 @@ export default function ContactScreen() {
                 <Ionicons 
                   name="timer-outline" 
                   size={18} 
-                  color={colors.muted.foreground} 
+                  color={colors.tokens.mutedForeground} 
                 />
                 <Text className="text-muted-foreground">Response within 24 hours</Text>
               </View>
@@ -222,7 +222,7 @@ export default function ContactScreen() {
                 <Ionicons 
                   name="time-outline" 
                   size={18} 
-                  color={colors.muted.foreground} 
+                  color={colors.tokens.mutedForeground} 
                 />
                 <Text className="text-muted-foreground">24/7 for critical issues</Text>
               </View>
@@ -313,7 +313,7 @@ export default function ContactScreen() {
                 <Ionicons 
                   name="star-outline" 
                   size={18} 
-                  color={colors.muted.foreground} 
+                  color={colors.tokens.mutedForeground} 
                 />
                 <Text className="text-muted-foreground">Feature requests available in-app</Text>
               </View>
@@ -351,7 +351,7 @@ export default function ContactScreen() {
                     <Ionicons 
                       name="call-outline" 
                       size={16} 
-                      color={colors.primary.DEFAULT} 
+                      color={colors.tokens.primary} 
                     />
                     <Text className="text-primary">+1 (555) 348-5644</Text>
                   </TouchableOpacity>
@@ -372,7 +372,7 @@ export default function ContactScreen() {
                     <Ionicons 
                       name="call-outline" 
                       size={16} 
-                      color={colors.primary.DEFAULT} 
+                      color={colors.tokens.primary} 
                     />
                     <Text className="text-primary">+1 (512) 348-9876</Text>
                   </TouchableOpacity>
@@ -431,7 +431,7 @@ export default function ContactScreen() {
               <Ionicons 
                 name="warning-outline" 
                 size={24} 
-                color={colors.destructive} 
+                color={colors.tokens.destructive} 
               />
               <Text className="text-destructive text-base font-medium">Emergency Contact</Text>
             </View>
@@ -447,7 +447,7 @@ export default function ContactScreen() {
                 <Ionicons 
                   name="call-outline" 
                   size={18} 
-                  color={colors.destructive} 
+                  color={colors.tokens.destructive} 
                 />
                 <Text className="text-destructive font-medium">+1 (555) 911-HELP</Text>
               </TouchableOpacity>
@@ -459,7 +459,7 @@ export default function ContactScreen() {
                 <Ionicons 
                   name="mail-outline" 
                   size={18} 
-                  color={colors.destructive} 
+                  color={colors.tokens.destructive} 
                 />
                 <Text className="text-destructive font-medium">security@fitlogger.com</Text>
               </TouchableOpacity>
@@ -467,7 +467,7 @@ export default function ContactScreen() {
                 <Ionicons 
                   name="time-outline" 
                   size={18} 
-                  color={colors.muted.foreground} 
+                  color={colors.tokens.mutedForeground} 
                 />
                 <Text className="text-muted-foreground">Available 24/7</Text>
               </View>
