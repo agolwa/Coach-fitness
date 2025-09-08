@@ -20,6 +20,7 @@ export default function TabLayout() {
         headerShown: false,
         tabBarButton: HapticTab,
         tabBarBackground: TabBarBackground,
+        tabBarShowLabel: false,
         tabBarStyle: {
           height: Platform.select({
             ios: 50 + insets.bottom,
@@ -38,11 +39,10 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
           tabBarIcon: ({ color, size = 24 }) => (
             <IconSymbol 
               size={size} 
-              name="house.fill" 
+              name="feather-home" 
               color={color}
             />
           ),
@@ -51,11 +51,10 @@ export default function TabLayout() {
       <Tabs.Screen
         name="activity"
         options={{
-          title: 'Activity',
           tabBarIcon: ({ color, size = 24 }) => (
             <IconSymbol 
               size={size} 
-              name="activity" 
+              name="feather-activity" 
               color={color}
             />
           ),
@@ -64,11 +63,10 @@ export default function TabLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profile',
           tabBarIcon: ({ color, size = 24 }) => (
             <IconSymbol 
               size={size} 
-              name="person.fill" 
+              name="feather-user" 
               color={color}
             />
           ),

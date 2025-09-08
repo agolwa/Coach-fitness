@@ -150,7 +150,7 @@ export default function FeedbackScreen() {
             <View className="flex-row items-center gap-3 mb-4">
               <View className="w-12 h-12 bg-primary/10 rounded-full items-center justify-center">
                 <Ionicons 
-                  name="lightbulb-outline" 
+                  name="bulb-outline" 
                   size={24} 
                   color={colors.tokens.primary} 
                 />

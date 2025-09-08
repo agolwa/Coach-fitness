@@ -24,6 +24,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
+// UI Components
+import { IconSymbol } from '@/components/ui/IconSymbol';
+
 // Stores and hooks
 import { useUserStore } from '@/stores/user-store';
 import { useUnifiedTheme, useUnifiedColors } from '@/hooks/use-unified-theme';
@@ -276,7 +279,7 @@ export default function ProfileScreen() {
           <View className="py-6">
             <View className="flex-row items-center gap-4">
               <View className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
-                <Ionicons name="person" size={32} color={colors.tokens.primary} />
+                <IconSymbol name="feather-user" size={32} color={colors.tokens.primary} />
               </View>
               <View className="flex-1">
                 {isSignedIn ? (

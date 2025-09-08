@@ -285,7 +285,7 @@ export default function ContactScreen() {
             <View className="flex-row items-center gap-3 mb-4">
               <View className="w-12 h-12 bg-green-100 rounded-full items-center justify-center">
                 <Ionicons 
-                  name="lightbulb-outline" 
+                  name="bulb-outline" 
                   size={24} 
                   color="#059669" 
                 />
