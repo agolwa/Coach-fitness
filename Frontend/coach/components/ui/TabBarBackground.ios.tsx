@@ -1,6 +1,6 @@
-import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { BlurView } from 'expo-blur';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function BlurTabBarBackground() {
   return (
@@ -15,5 +15,10 @@ export default function BlurTabBarBackground() {
 }
 
 export function useBottomTabOverflow() {
-  return useBottomTabBarHeight();
+  const insets = useSafeAreaInsets();
+  // Return a reasonable estimate for tab bar height + safe area
+  return Platform.select({
+    ios: 50 + insets.bottom, // Standard tab bar height + safe area
+    default: 60, // Standard height for other platforms
+  });
 }

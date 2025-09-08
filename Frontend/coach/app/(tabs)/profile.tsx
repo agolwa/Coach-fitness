@@ -263,7 +263,7 @@ export default function ProfileScreen() {
             className="p-2 -m-2 rounded-lg"
             activeOpacity={0.7}
           >
-            <Ionicons name="arrow-back" size={24} className="text-foreground" />
+            <Ionicons name="arrow-back" size={24} color={colors.tokens.foreground} />
           </TouchableOpacity>
           <Text className="text-foreground text-lg font-semibold">Profile</Text>
         </View>
@@ -276,7 +276,7 @@ export default function ProfileScreen() {
           <View className="py-6">
             <View className="flex-row items-center gap-4">
               <View className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
-                <Ionicons name="person" size={32} className="text-primary" />
+                <Ionicons name="person" size={32} color={colors.tokens.primary} />
               </View>
               <View className="flex-1">
                 {isSignedIn ? (
@@ -466,7 +466,7 @@ export default function ProfileScreen() {
                   <Ionicons 
                     name="sunny" 
                     size={16} 
-                    className={colorScheme === 'light' ? 'text-primary' : 'text-muted-foreground'} 
+                    color={colorScheme === 'light' ? colors.tokens.primary : colors.tokens.mutedForeground} 
                   />
                   <Switch
                     value={colorScheme === 'dark'}
@@ -501,7 +501,7 @@ export default function ProfileScreen() {
                   <Ionicons 
                     name="moon" 
                     size={16} 
-                    className={colorScheme === 'dark' ? 'text-primary' : 'text-muted-foreground'} 
+                    color={colorScheme === 'dark' ? colors.tokens.primary : colors.tokens.mutedForeground} 
                   />
                 </View>
               </View>
@@ -520,11 +520,11 @@ export default function ProfileScreen() {
                 <View className="flex-row items-center justify-between">
                   <View className="flex-row items-center gap-4">
                     <View className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                      <Ionicons name={item.icon} size={20} className="text-primary" />
+                      <Ionicons name={item.icon} size={20} color={colors.tokens.primary} />
                     </View>
                     <Text className="text-foreground font-medium">{item.title}</Text>
                   </View>
-                  <Ionicons name="chevron-forward" size={20} className="text-muted-foreground" />
+                  <Ionicons name="chevron-forward" size={20} color={colors.tokens.mutedForeground} />
                 </View>
               </TouchableOpacity>
             ))}
@@ -548,14 +548,14 @@ export default function ProfileScreen() {
                       {logoutMutation.isPending ? (
                         <ActivityIndicator size={16} color="#ea580c" />
                       ) : (
-                        <Ionicons name="log-out-outline" size={20} className="text-orange-600" />
+                        <Ionicons name="log-out-outline" size={20} color="#ea580c" />
                       )}
                     </View>
                     <Text className="text-foreground font-medium">
                       {logoutMutation.isPending ? 'Signing Out...' : 'Sign Out'}
                     </Text>
                   </View>
-                  <Ionicons name="chevron-forward" size={20} className="text-muted-foreground" />
+                  <Ionicons name="chevron-forward" size={20} color={colors.tokens.mutedForeground} />
                 </View>
               </TouchableOpacity>
 
@@ -568,11 +568,11 @@ export default function ProfileScreen() {
                 <View className="flex-row items-center justify-between">
                   <View className="flex-row items-center gap-4">
                     <View className="w-10 h-10 bg-destructive/10 rounded-full flex items-center justify-center">
-                      <Ionicons name="trash-outline" size={20} className="text-destructive" />
+                      <Ionicons name="trash-outline" size={20} color={colors.tokens.destructive} />
                     </View>
                     <Text className="text-destructive font-medium">Delete Account</Text>
                   </View>
-                  <Ionicons name="chevron-forward" size={20} className="text-muted-foreground" />
+                  <Ionicons name="chevron-forward" size={20} color={colors.tokens.mutedForeground} />
                 </View>
               </TouchableOpacity>
             </View>

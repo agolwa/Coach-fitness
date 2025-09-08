@@ -825,4 +825,175 @@ colors.legacy.*             // ✅ Compatibility layer
 
 ---
 
-*Last updated: December 2024 - Theme standardization migration completed successfully*
+## 🚨 Navigation Context Error Resolution
+
+### Critical Issue: NavigationStateContext Error During Theme Switching
+
+**Symptoms:**
+- Error: "Couldn't find a navigation context. Have you wrapped your app with 'NavigationContainer'?"
+- Occurs specifically during theme switching operations
+- App works normally after dismissing error dialogs
+- Error appears in both Console Error and Render Error logs
+
+**Root Cause Analysis:**
+In commit `e99ee2b` ("fixed theme issue in layout file"), the `ThemeProvider` from `@react-navigation/native` was inadvertently removed from `app/_layout.tsx`. This provider is **REQUIRED** even when using Expo Router because:
+
+1. **React Navigation Components Dependency**: Components like `HapticTab`, `TabBarBackground`, and other navigation-related components still depend on React Navigation's context
+2. **Expo Router Builds on React Navigation**: Expo Router is built on top of React Navigation and expects certain providers to be present
+3. **Theme Switching Triggers Re-renders**: During theme changes, components temporarily lose access to navigation context without the provider
+
+**The Missing Provider Pattern:**
+```tsx
+// ❌ BROKEN: Missing ThemeProvider (removed in e99ee2b)
+return (
+  <View className={colorScheme === 'dark' ? 'dark flex-1' : 'flex-1'}>
+    <StatusBar style={isDark ? 'light' : 'dark'} />
+    <Stack>
+      {/* Stack screens */}
+    </Stack>
+  </View>
+);
+```
+
+**✅ CORRECT: Required ThemeProvider Pattern**
+```tsx
+// Import required
+import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+
+// Proper implementation
+return (
+  <View className={colorScheme === 'dark' ? 'dark flex-1' : 'flex-1'}>
+    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
+      <Stack>
+        <Stack.Screen name="index" options={{ headerShown: false }} />
+        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="(modal)" options={{ headerShown: false }} />
+        <Stack.Screen name="+not-found" />
+      </Stack>
+    </ThemeProvider>
+  </View>
+);
+```
+
+### Architecture Understanding
+
+**Dual Theme System Coexistence:**
+- **React Navigation ThemeProvider**: Provides navigation context and theme for React Navigation components
+- **Custom Theme System**: `useUnifiedTheme`/`useUnifiedColors` for application-specific theming
+- **NativeWind Dark Mode**: CSS class-based theming controlled by `className={colorScheme === 'dark' ? 'dark flex-1' : 'flex-1'}`
+
+**Why All Three Are Needed:**
+1. **ThemeProvider**: Satisfies React Navigation component requirements
+2. **Custom Theme Hooks**: Provide semantic color tokens and theme state management  
+3. **NativeWind Classes**: Enable CSS variable-based styling and dark mode switching
+
+### Components That Require Navigation Context
+
+**Direct Dependencies:**
+- `HapticTab.tsx` - Tab bar button component
+- `TabBarBackground.tsx` / `TabBarBackground.ios.tsx` - Tab bar styling
+- Any component using `@react-navigation` imports
+
+**Indirect Dependencies:**
+- Components rendered within tab navigation
+- Modal screens that may use navigation-aware components
+- Any component that might use React Navigation hooks in the future
+
+### Prevention Guidelines
+
+**For Future Layout Changes:**
+- [ ] **NEVER remove ThemeProvider** from `app/_layout.tsx` 
+- [ ] **Always test theme switching** after layout modifications
+- [ ] **Verify navigation functionality** remains intact
+- [ ] **Check for navigation context errors** in development logs
+
+**For New Navigation Components:**
+- [ ] Prefer Expo Router APIs over direct React Navigation when possible
+- [ ] If using React Navigation components directly, ensure proper typing
+- [ ] Test with both light and dark themes
+- [ ] Verify functionality during theme transitions
+
+### Diagnostic Process
+
+**When encountering navigation context errors:**
+
+1. **Check Provider Hierarchy**
+   ```bash
+   grep -n "ThemeProvider" app/_layout.tsx
+   # Should return: import and JSX usage lines
+   ```
+
+2. **Verify Import Statements**
+   ```bash
+   grep -n "@react-navigation/native" app/_layout.tsx  
+   # Should include: DarkTheme, DefaultTheme, ThemeProvider
+   ```
+
+3. **Trace Recent Layout Changes**
+   ```bash
+   git log --oneline -n 10 -- app/_layout.tsx
+   # Look for theme-related commits that might have removed providers
+   ```
+
+4. **Test Theme Switching**
+   - Navigate to profile screen
+   - Toggle theme switch
+   - Observe console for navigation errors
+   - Verify app functionality remains stable
+
+### Recovery Steps
+
+**If ThemeProvider is missing:**
+
+1. **Add Import**
+   ```tsx
+   import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+   ```
+
+2. **Wrap Stack Component**
+   ```tsx
+   <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+     <StatusBar style={isDark ? 'light' : 'dark'} />
+     <Stack>
+       {/* Stack screens */}
+     </Stack>
+   </ThemeProvider>
+   ```
+
+3. **Maintain View Wrapper**
+   - Keep the outer View with dynamic className for NativeWind
+   - Preserve existing theme switching logic
+   - Don't modify custom theme hook usage
+
+### Testing Checklist
+
+**Post-Fix Validation:**
+- [ ] App launches without navigation context errors
+- [ ] Theme switching works smoothly (Profile screen toggle)
+- [ ] Tab navigation remains functional
+- [ ] Modal screens open/close properly
+- [ ] No console errors during theme transitions
+- [ ] Both iOS and Android platforms tested
+- [ ] Dark/light theme persistence works correctly
+
+### Key Architectural Insight
+
+**The Three-Layer Theme System:**
+```
+┌─ NativeWind Classes (dark/flex-1) ─ Controls CSS Variables
+│  ├─ React Navigation ThemeProvider ─ Provides Navigation Context  
+│  │  ├─ Custom Theme Hooks ─ Application Logic & Semantic Tokens
+│  │  │  └─ App Components ─ Consume from all layers as needed
+```
+
+This architecture allows:
+- **Navigation context stability** during theme changes
+- **Semantic color token access** for application styling  
+- **CSS variable-based theming** for consistent dark/light mode
+- **Coexistence** of multiple theming approaches without conflicts
+
+---
+
+*Last updated: December 2024 - Navigation context error resolution documented*

@@ -238,7 +238,7 @@ export default function WorkoutDetailScreen() {
             <Ionicons 
               name="arrow-back" 
               size={24} 
-              color={colors.foreground} 
+              color={colors.tokens.foreground} 
             />
           </TouchableOpacity>
           
@@ -272,8 +272,8 @@ export default function WorkoutDetailScreen() {
                         onSubmitEditing={handleSaveTitle}
                         className="flex-1 bg-transparent text-foreground text-xl font-medium border-b border-border focus:border-primary py-1"
                         style={{ 
-                          color: colors.foreground,
-                          borderBottomColor: colors.border 
+                          color: colors.tokens.foreground,
+                          borderBottomColor: colors.tokens.border 
                         }}
                         autoFocus
                         selectTextOnFocus
@@ -409,7 +409,7 @@ export default function WorkoutDetailScreen() {
                 <Ionicons 
                   name="add-circle-outline" 
                   size={20} 
-                  color={colors.foreground} 
+                  color={colors.tokens.foreground} 
                 />
                 <Text className="text-foreground font-medium">
                   Add to Current Session

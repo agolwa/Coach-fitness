@@ -1,8 +1,19 @@
-import { BottomTabBarButtonProps } from '@react-navigation/bottom-tabs';
 import * as Haptics from 'expo-haptics';
-import { Platform, TouchableOpacity } from 'react-native';
+import { TouchableOpacity, GestureResponderEvent, AccessibilityState, ViewStyle } from 'react-native';
 
-export function HapticTab(props: BottomTabBarButtonProps) {
+interface TabBarButtonProps {
+  onPress?: (e: GestureResponderEvent) => void;
+  onPressIn?: (e: GestureResponderEvent) => void;
+  onLongPress?: (e: GestureResponderEvent) => void;
+  accessibilityState?: AccessibilityState;
+  accessibilityLabel?: string;
+  testID?: string;
+  style?: ViewStyle;
+  href?: string;
+  children?: React.ReactNode;
+}
+
+export function HapticTab(props: TabBarButtonProps) {
   return (
     <TouchableOpacity
       {...props}
