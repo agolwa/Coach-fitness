@@ -368,17 +368,9 @@ export const useThemeStore = create<ThemeStore>()(
   }))
 );
 
-// Subscribe to system appearance changes
-Appearance.addChangeListener(({ colorScheme }) => {
-  // Only update if user hasn't set a manual preference
-  AsyncStorage.getItem(THEME_STORAGE_KEY).then(storedScheme => {
-    if (!storedScheme && colorScheme) {
-      useThemeStore.getState().setColorScheme(
-        colorScheme === 'dark' ? 'dark' : 'light'
-      );
-    }
-  });
-});
+// NOTE: Appearance listener is now managed by StoreInitializer
+// to ensure proper timing after navigation context is established
+// See stores/store-initializer.ts
 
 // Export theme configurations and utilities
 export { lightTheme, darkTheme, animationPresets, validateTheme };

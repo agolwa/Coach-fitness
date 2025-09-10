@@ -310,7 +310,7 @@ export default function ProfileScreen() {
 
           {/* Guest Sign Up Prompt */}
           {isGuest && (
-            <View className="border border-primary/20 bg-primary/5 rounded-lg p-4 mb-6">
+            <View className="border border-border bg-primary/5 rounded-lg p-4 mb-6">
               <View className="flex-row items-center justify-between">
                 <View className="flex-1">
                   <Text className="text-foreground font-semibold mb-1">Unlock Full Features</Text>

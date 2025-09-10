@@ -13,6 +13,7 @@ import { StoreProvider, useStoreInitialization, StoreLoadingScreen } from '@/com
 import { useUserStore } from '@/stores/user-store';
 import { useThemeStore } from '@/stores/theme-store';
 import { initializeThemeClassManager } from '@/utils/theme-class-manager';
+import StoreInitializer from '@/stores/store-initializer';
 
 // QueryClient configuration for React Query
 const queryClient = new QueryClient({
@@ -53,6 +54,18 @@ const queryClient = new QueryClient({
 function ThemedAppContent() {
   const { isDark } = useUnifiedTheme();
   
+  // Initialize store side effects AFTER navigation context is ready
+  React.useEffect(() => {
+    // Initialize all stores and their side effects
+    // This ensures proper timing - navigation context exists before listeners
+    StoreInitializer.initialize();
+    
+    // Cleanup on unmount
+    return () => {
+      StoreInitializer.cleanup();
+    };
+  }, []);
+  
   return (
     <>
       <StatusBar style={isDark ? 'light' : 'dark'} />
@@ -68,10 +81,27 @@ function ThemedAppContent() {
 }
 
 function AppContent() {
-  // Use theme store directly, not the hook, to avoid navigation context issues
-  const colorScheme = useThemeStore(state => state.colorScheme);
+  // Use React state to avoid triggering re-renders during store initialization
+  const [colorScheme, setColorScheme] = React.useState<'light' | 'dark'>('light');
   const { isInitialized, hasErrors } = useStoreInitialization();
   const { authState, isLoading } = useUserStore();
+
+  // Subscribe to theme changes after component mounts
+  React.useEffect(() => {
+    // Get initial value
+    setColorScheme(useThemeStore.getState().colorScheme);
+    
+    // Subscribe to changes
+    const unsubscribe = useThemeStore.subscribe(
+      (state) => state.colorScheme,
+      (scheme) => {
+        console.log('AppContent: Theme changed to:', scheme);
+        setColorScheme(scheme);
+      }
+    );
+
+    return unsubscribe;
+  }, []);
 
   if (!isInitialized || isLoading) {
     return <StoreLoadingScreen />;

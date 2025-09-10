@@ -11,74 +11,74 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Core Colors - Now using exact Figma HEX values with HSL fallbacks
-        background: 'var(--background, hsl(var(--background-hsl)))',
-        foreground: 'var(--foreground, hsl(var(--foreground-hsl)))',
+        // Core Colors - RGB values for proper opacity support with HSL fallbacks
+        background: 'rgb(var(--background) / <alpha-value>)',
+        foreground: 'rgb(var(--foreground) / <alpha-value>)',
         card: {
-          DEFAULT: 'var(--card, hsl(var(--card-hsl)))',
-          foreground: 'var(--card-foreground, hsl(var(--card-foreground-hsl)))',
+          DEFAULT: 'rgb(var(--card) / <alpha-value>)',
+          foreground: 'rgb(var(--card-foreground) / <alpha-value>)',
         },
         popover: {
-          DEFAULT: 'var(--popover, hsl(var(--popover-hsl)))',
-          foreground: 'var(--popover-foreground, hsl(var(--popover-foreground-hsl)))',
+          DEFAULT: 'rgb(var(--popover) / <alpha-value>)',
+          foreground: 'rgb(var(--popover-foreground) / <alpha-value>)',
         },
         
-        // Primary - Uber Green (exact Figma HEX with HSL fallback)
+        // Primary - Uber Green (RGB for opacity support with HSL fallback)
         primary: {
-          DEFAULT: 'var(--primary, hsl(var(--primary-hsl)))',
-          foreground: 'var(--primary-foreground, hsl(var(--primary-foreground-hsl)))',
+          DEFAULT: 'rgb(var(--primary) / <alpha-value>)',
+          foreground: 'rgb(var(--primary-foreground) / <alpha-value>)',
         },
         
-        // Secondary - Neutral grays (exact Figma HEX with HSL fallback)
+        // Secondary - Neutral grays (RGB for opacity support with HSL fallback)
         secondary: {
-          DEFAULT: 'var(--secondary, hsl(var(--secondary-hsl)))',
-          foreground: 'var(--secondary-foreground, hsl(var(--secondary-foreground-hsl)))',
+          DEFAULT: 'rgb(var(--secondary) / <alpha-value>)',
+          foreground: 'rgb(var(--secondary-foreground) / <alpha-value>)',
         },
         
-        // Muted - Light grays for subtle elements (exact Figma HEX with HSL fallback)
+        // Muted - Light grays for subtle elements (RGB for opacity support with HSL fallback)
         muted: {
-          DEFAULT: 'var(--muted, hsl(var(--muted-hsl)))',
-          foreground: 'var(--muted-foreground, hsl(var(--muted-foreground-hsl)))',
+          DEFAULT: 'rgb(var(--muted) / <alpha-value>)',
+          foreground: 'rgb(var(--muted-foreground) / <alpha-value>)',
         },
         
-        // Accent - Slightly darker than secondary (exact Figma HEX with HSL fallback)
+        // Accent - Slightly darker than secondary (RGB for opacity support with HSL fallback)
         accent: {
-          DEFAULT: 'var(--accent, hsl(var(--accent-hsl)))',
-          foreground: 'var(--accent-foreground, hsl(var(--accent-foreground-hsl)))',
+          DEFAULT: 'rgb(var(--accent) / <alpha-value>)',
+          foreground: 'rgb(var(--accent-foreground) / <alpha-value>)',
         },
         
-        // Destructive - Uber's red for errors (exact Figma HEX with HSL fallback)
+        // Destructive - Uber's red for errors (RGB for opacity support with HSL fallback)
         destructive: {
-          DEFAULT: 'var(--destructive, hsl(var(--destructive-hsl)))',
-          foreground: 'var(--destructive-foreground, hsl(var(--destructive-foreground-hsl)))',
+          DEFAULT: 'rgb(var(--destructive) / <alpha-value>)',
+          foreground: 'rgb(var(--destructive-foreground) / <alpha-value>)',
         },
         
-        // Borders and inputs (exact Figma HEX with HSL fallback)
-        border: 'var(--border, hsl(var(--border-hsl)))',
-        input: 'var(--input, hsl(var(--input-hsl)))',
-        'input-background': 'var(--input-background, hsl(var(--input-background-hsl)))',
-        'switch-background': 'var(--switch-background, hsl(var(--switch-background-hsl)))',
-        ring: 'var(--ring, hsl(var(--ring-hsl)))',
+        // Borders and inputs (RGB for opacity support with HSL fallback)
+        border: 'rgb(var(--border) / <alpha-value>)',
+        input: 'rgb(var(--input) / <alpha-value>)',
+        'input-background': 'rgb(var(--input-background) / <alpha-value>)',
+        'switch-background': 'rgb(var(--switch-background) / <alpha-value>)',
+        ring: 'rgb(var(--ring) / <alpha-value>)',
         
-        // Chart colors for data visualization (exact Figma HEX with HSL fallback)
+        // Chart colors for data visualization (RGB for opacity support with HSL fallback)
         chart: {
-          1: 'var(--chart-1, hsl(var(--chart-1-hsl)))',
-          2: 'var(--chart-2, hsl(var(--chart-2-hsl)))',
-          3: 'var(--chart-3, hsl(var(--chart-3-hsl)))',
-          4: 'var(--chart-4, hsl(var(--chart-4-hsl)))',
-          5: 'var(--chart-5, hsl(var(--chart-5-hsl)))',
+          1: 'rgb(var(--chart-1) / <alpha-value>)',
+          2: 'rgb(var(--chart-2) / <alpha-value>)',
+          3: 'rgb(var(--chart-3) / <alpha-value>)',
+          4: 'rgb(var(--chart-4) / <alpha-value>)',
+          5: 'rgb(var(--chart-5) / <alpha-value>)',
         },
         
-        // Sidebar colors (exact Figma HEX with HSL fallback)
+        // Sidebar colors (RGB for opacity support with HSL fallback)
         sidebar: {
-          DEFAULT: 'var(--sidebar, hsl(var(--sidebar-hsl)))',
-          foreground: 'var(--sidebar-foreground, hsl(var(--sidebar-foreground-hsl)))',
-          primary: 'var(--sidebar-primary, hsl(var(--sidebar-primary-hsl)))',
-          'primary-foreground': 'var(--sidebar-primary-foreground, hsl(var(--sidebar-primary-foreground-hsl)))',
-          accent: 'var(--sidebar-accent, hsl(var(--sidebar-accent-hsl)))',
-          'accent-foreground': 'var(--sidebar-accent-foreground, hsl(var(--sidebar-accent-foreground-hsl)))',
-          border: 'var(--sidebar-border, hsl(var(--sidebar-border-hsl)))',
-          ring: 'var(--sidebar-ring, hsl(var(--sidebar-ring-hsl)))',
+          DEFAULT: 'rgb(var(--sidebar) / <alpha-value>)',
+          foreground: 'rgb(var(--sidebar-foreground) / <alpha-value>)',
+          primary: 'rgb(var(--sidebar-primary) / <alpha-value>)',
+          'primary-foreground': 'rgb(var(--sidebar-primary-foreground) / <alpha-value>)',
+          accent: 'rgb(var(--sidebar-accent) / <alpha-value>)',
+          'accent-foreground': 'rgb(var(--sidebar-accent-foreground) / <alpha-value>)',
+          border: 'rgb(var(--sidebar-border) / <alpha-value>)',
+          ring: 'rgb(var(--sidebar-ring) / <alpha-value>)',
         },
       },
       
