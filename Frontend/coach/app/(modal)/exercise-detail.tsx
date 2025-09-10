@@ -361,14 +361,13 @@ export default function ExerciseDetailScreen() {
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         {/* Weight and Reps Controls */}
         <View className="px-6 mb-6">
-          <View className="bg-card border border-border rounded-xl p-6">
-            <View className="flex-row gap-8">
+          <View className="flex-row gap-8">
               {/* Weight Control */}
               <View className="flex-1">
                 <Text className="text-muted-foreground text-sm font-medium mb-4">
                   Weight ({weightUnitDisplay})
                 </Text>
-                <View className="flex-row items-center justify-center gap-3">
+                <View className="flex-row items-center justify-center gap-1">
                   <TouchableOpacity
                     onPress={() => handleWeightChange(-1)}
                     className="w-12 h-12 bg-secondary border border-border rounded-lg items-center justify-center"
@@ -416,7 +415,7 @@ export default function ExerciseDetailScreen() {
                 <Text className="text-muted-foreground text-sm font-medium mb-4">
                   Reps
                 </Text>
-                <View className="flex-row items-center justify-center gap-3">
+                <View className="flex-row items-center justify-center gap-1">
                   <TouchableOpacity
                     onPress={() => handleRepsChange(-1)}
                     className="w-12 h-12 bg-secondary border border-border rounded-lg items-center justify-center"
@@ -458,7 +457,6 @@ export default function ExerciseDetailScreen() {
                   </TouchableOpacity>
                 </View>
               </View>
-            </View>
           </View>
         </View>
 
@@ -544,23 +542,23 @@ export default function ExerciseDetailScreen() {
                           {index + 1}
                         </Text>
                       </View>
-                      <View>
-                        <Text className="text-foreground font-medium">
-                          {isBodyweightExercise() && set.weight === 0 
-                            ? 'Bodyweight' 
-                            : `${set.weight} ${weightUnit}`
-                          }
-                        </Text>
-                        <Text className="text-muted-foreground text-sm">
-                          {set.reps} reps
-                        </Text>
-                      </View>
+                      <Text className="text-foreground font-medium">
+                        {isBodyweightExercise() && set.weight === 0 
+                          ? 'Bodyweight' 
+                          : `${set.weight} ${weightUnit}`
+                        }
+                      </Text>
                     </View>
-                    {selectedSetId === set.id && (
-                      <View className="bg-primary/10 px-2 py-1 rounded">
-                        <Text className="text-primary text-xs font-medium">Selected</Text>
-                      </View>
-                    )}
+                    <View className="flex-row items-center gap-2">
+                      <Text className="text-foreground font-medium">
+                        {set.reps} reps
+                      </Text>
+                      {selectedSetId === set.id && (
+                        <View className="bg-primary/10 px-2 py-1 rounded">
+                          <Text className="text-primary text-xs font-medium">Selected</Text>
+                        </View>
+                      )}
+                    </View>
                   </View>
                   {set.notes && (
                     <Text className="text-muted-foreground text-sm mt-2" numberOfLines={2}>
