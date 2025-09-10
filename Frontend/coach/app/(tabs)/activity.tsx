@@ -91,8 +91,8 @@ export default function ActivityScreen() {
   const hasMoreWorkouts = displayedWorkouts.length < filteredWorkouts.length;
 
   // Helper functions
-  const formatWeight = (weight: number) => {
-    return weight > 0 ? `${weight} ${userStore.weightUnit}` : "Bodyweight";
+  const formatWeight = (weight: number, unit: string) => {
+    return weight > 0 ? `${weight} ${unit}` : "Bodyweight";
   };
 
   const getTotalExercises = (exercises: WorkoutHistoryItem['exercises']) => {

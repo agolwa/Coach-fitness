@@ -17,7 +17,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Haptics } from 'expo-haptics';
+import * as Haptics from 'expo-haptics';
 
 // Store imports
 import { useWorkoutStore } from '@/stores/workout-store';
@@ -85,8 +85,8 @@ export default function WorkoutDetailScreen() {
   }
 
   // Helper functions
-  const formatWeight = (weight: number): string => {
-    return weight > 0 ? `${weight} ${userStore.weightUnit}` : "BW";
+  const formatWeight = (weight: number, unit: string): string => {
+    return weight > 0 ? `${weight} ${unit}` : "BW";
   };
 
   const getTotalSets = (): number => {
@@ -479,7 +479,7 @@ export default function WorkoutDetailScreen() {
                               </View>
                               <View className="w-16">
                                 <Text className="text-foreground text-sm text-center font-medium">
-                                  {formatWeight(set.weight || 0)}
+                                  {formatWeight(set.weight || 0, workout.weightUnit)}
                                 </Text>
                               </View>
                               <View className="w-16">
@@ -523,7 +523,8 @@ export default function WorkoutDetailScreen() {
                                 {formatWeight(
                                   exerciseSets.length > 0 
                                     ? Math.max(...exerciseSets.map(set => set.weight || 0)) 
-                                    : 0
+                                    : 0,
+                                  workout.weightUnit
                                 )}
                               </Text>
                               <Text className="text-muted-foreground text-xs">
