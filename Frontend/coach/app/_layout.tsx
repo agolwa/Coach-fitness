@@ -11,6 +11,7 @@ import '../global.css';
 import { useUnifiedTheme } from '@/hooks/use-unified-theme';
 import { StoreProvider, useStoreInitialization, StoreLoadingScreen } from '@/components/StoreProvider';
 import { useUserStore } from '@/stores/user-store';
+import { useThemeStore } from '@/stores/theme-store';
 import { initializeThemeClassManager } from '@/utils/theme-class-manager';
 
 // QueryClient configuration for React Query
@@ -48,8 +49,27 @@ const queryClient = new QueryClient({
   },
 });
 
+// New component that safely uses theme hooks after ThemeProvider is established
+function ThemedAppContent() {
+  const { isDark } = useUnifiedTheme();
+  
+  return (
+    <>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
+      <Stack>
+        <Stack.Screen name="index" options={{ headerShown: false }} />
+        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="(modal)" options={{ headerShown: false }} />
+        <Stack.Screen name="+not-found" />
+      </Stack>
+    </>
+  );
+}
+
 function AppContent() {
-  const { colorScheme, isDark } = useUnifiedTheme();
+  // Use theme store directly, not the hook, to avoid navigation context issues
+  const colorScheme = useThemeStore(state => state.colorScheme);
   const { isInitialized, hasErrors } = useStoreInitialization();
   const { authState, isLoading } = useUserStore();
 
@@ -64,14 +84,7 @@ function AppContent() {
   return (
     <View className={colorScheme === 'dark' ? 'dark flex-1' : 'flex-1'}>
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <StatusBar style={isDark ? 'light' : 'dark'} />
-        <Stack>
-          <Stack.Screen name="index" options={{ headerShown: false }} />
-          <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="(modal)" options={{ headerShown: false }} />
-          <Stack.Screen name="+not-found" />
-        </Stack>
+        <ThemedAppContent />
       </ThemeProvider>
     </View>
   );

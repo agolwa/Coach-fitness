@@ -996,4 +996,154 @@ This architecture allows:
 
 ---
 
-*Last updated: December 2024 - Navigation context error resolution documented*
+## 🔧 **September 2024: Navigation Context Error - FINAL RESOLUTION**
+
+### Critical Fix: Component Hierarchy Restructuring
+
+**Issue Resolved**: Navigation context error during theme switching - "Couldn't find a navigation context. Have you wrapped your app with 'NavigationContainer'?"
+
+**Root Cause Analysis:**
+The error occurred because `useUnifiedTheme()` hook was being called in `AppContent` component BEFORE the `ThemeProvider` from React Navigation was established in the component tree. During theme switches, this created a race condition where navigation-dependent components temporarily lost access to navigation context.
+
+**Location**: `app/_layout.tsx` - Lines 52 and 66 in the original implementation
+
+**Solution Implemented:**
+
+#### **1. Component Hierarchy Restructuring**
+
+**Before (❌ Problematic):**
+```tsx
+function AppContent() {
+  const { colorScheme, isDark } = useUnifiedTheme(); // ❌ Called before ThemeProvider
+  // ... store checks
+  
+  return (
+    <View className={colorScheme === 'dark' ? 'dark flex-1' : 'flex-1'}>
+      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+        <StatusBar style={isDark ? 'light' : 'dark'} />
+        <Stack>
+          {/* navigation screens */}
+        </Stack>
+      </ThemeProvider>
+    </View>
+  );
+}
+```
+
+**After (✅ Fixed):**
+```tsx
+// New component that safely uses theme hooks
+function ThemedAppContent() {
+  const { isDark } = useUnifiedTheme(); // ✅ Safe - called after ThemeProvider
+  
+  return (
+    <>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
+      <Stack>
+        <Stack.Screen name="index" options={{ headerShown: false }} />
+        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="(modal)" options={{ headerShrown: false }} />
+        <Stack.Screen name="+not-found" />
+      </Stack>
+    </>
+  );
+}
+
+function AppContent() {
+  // Use theme store directly to avoid navigation context dependency
+  const colorScheme = useThemeStore(state => state.colorScheme); // ✅ Direct store access
+  const { isInitialized, hasErrors } = useStoreInitialization();
+  const { authState, isLoading } = useUserStore();
+
+  if (!isInitialized || isLoading) {
+    return <StoreLoadingScreen />;
+  }
+
+  return (
+    <View className={colorScheme === 'dark' ? 'dark flex-1' : 'flex-1'}>
+      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+        <ThemedAppContent /> {/* ✅ Navigation context available here */}
+      </ThemeProvider>
+    </View>
+  );
+}
+```
+
+#### **2. Final Component Tree Architecture**
+```
+RootLayout
+└── QueryClientProvider
+    └── StoreProvider
+        └── AppContent (store initialization & direct theme store access)
+            └── View with dark class (NativeWind theme)
+                └── ThemeProvider (React Navigation context)
+                    └── ThemedAppContent (safe theme hook usage)
+                        └── StatusBar + Stack Navigation
+```
+
+#### **3. Key Implementation Details**
+
+**Import Addition:**
+```tsx
+import { useThemeStore } from '@/stores/theme-store';
+```
+
+**Component Separation Benefits:**
+1. **Context Safety**: Theme hooks only called after navigation context established
+2. **Clean Separation**: Store initialization separate from theme rendering
+3. **No Breaking Changes**: All existing functionality preserved
+4. **Provider Order**: Proper React Navigation provider hierarchy
+
+#### **4. Technical Insights**
+
+**Why This Fix Works:**
+- **Timing Resolution**: Navigation context available before any component tries to access it
+- **Hook Safety**: `useUnifiedTheme()` only called within provider boundary
+- **Store Direct Access**: Theme state accessed without hooks in critical initialization phase
+- **Proper Cascading**: All three theme layers (NativeWind, React Navigation, Custom) work together
+
+**Files Modified:**
+- `app/_layout.tsx` - Component restructuring and import addition
+
+**Testing Results:**
+- ✅ No navigation context errors during theme switching
+- ✅ Rapid theme toggles work without issues
+- ✅ App functionality fully preserved
+- ✅ Theme persistence across app restarts
+- ✅ All navigation components work correctly
+
+#### **5. Architecture Validation**
+
+**The Three-Layer Theme System Preserved:**
+1. **NativeWind Classes** (`dark`/`flex-1`) - CSS variable control
+2. **React Navigation ThemeProvider** - Navigation context + theme
+3. **Custom Theme Hooks** - Application logic & semantic tokens
+
+**Provider Dependencies Resolved:**
+- ✅ QueryClientProvider → StoreProvider → AppContent
+- ✅ View (NativeWind) → ThemeProvider (React Nav) → ThemedAppContent  
+- ✅ All navigation-dependent components have context access
+- ✅ Theme hooks called in proper component lifecycle
+
+#### **6. Prevention Guidelines for Future Development**
+
+**✅ DO:**
+- Always call theme hooks AFTER establishing ThemeProvider
+- Use direct store access for critical initialization logic  
+- Maintain clear provider hierarchy separation
+- Test theme switching thoroughly during development
+
+**❌ NEVER:**
+- Call navigation-dependent hooks before provider setup
+- Mix initialization logic with theme hook dependencies
+- Remove or reorder the ThemeProvider in _layout.tsx
+- Assume hooks are safe to call during provider establishment
+
+### Resolution Status: **COMPLETE** ✅
+
+This architectural restructuring provides a permanent, robust solution to the navigation context error that was occurring during theme switching operations. The fix maintains all existing functionality while eliminating the race condition that caused the error.
+
+---
+
+*Last updated: September 2024 - Navigation context error permanently resolved through component hierarchy restructuring*
