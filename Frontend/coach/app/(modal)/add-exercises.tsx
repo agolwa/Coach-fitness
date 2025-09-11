@@ -11,7 +11,6 @@ import {
   TextInput,
   TouchableOpacity,
   FlatList,
-  Alert,
   ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -26,6 +25,7 @@ import { getErrorMessage } from '@/services/error-utils';
 import { useWorkoutStore } from '@/stores/workout-store';
 import { useUserStore } from '@/stores/user-store';
 import { useUnifiedColors } from '@/hooks/use-unified-theme';
+import { showSuccess, showError, showConfirm } from '@/utils/alert-utils';
 import type { SelectedExercise } from '@/types/workout';
 
 // Dropdown option types
@@ -240,7 +240,7 @@ export default function AddExercisesScreen() {
       // Note: This will be handled by the store, but we ensure UI updates immediately
     } catch (error) {
       console.error('Error toggling exercise selection:', error);
-      Alert.alert('Error', 'Failed to select exercise. Please try again.');
+      showError('Error', 'Failed to select exercise. Please try again.');
     }
   }, [exercises, exerciseStore]);
 
@@ -253,7 +253,7 @@ export default function AddExercisesScreen() {
       const selectedExercises = exercises.filter(ex => ex.selected);
       
       if (selectedExercises.length === 0) {
-        Alert.alert('No Exercises Selected', 'Please select at least one exercise to add to your workout.');
+        showError('No Exercises Selected', 'Please select at least one exercise to add to your workout.');
         return;
       }
 
@@ -277,14 +277,14 @@ export default function AddExercisesScreen() {
       
       // Show success feedback
       setTimeout(() => {
-        Alert.alert(
+        showSuccess(
           'Success!',
           `${selectedExercises.length} exercise${selectedExercises.length > 1 ? 's' : ''} added to your workout!`
         );
       }, 100);
     } catch (error) {
       console.error('Error adding exercises:', error);
-      Alert.alert('Error', 'Failed to add exercises to workout. Please try again.');
+      showError('Error', 'Failed to add exercises to workout. Please try again.');
     }
   }, [exercises, workoutStore, exerciseStore]);
 
@@ -295,26 +295,22 @@ export default function AddExercisesScreen() {
     
     try {
       if (selectedCount > 0) {
-        Alert.alert(
+        showConfirm(
           'Discard Selection?',
           `You have ${selectedCount} exercise${selectedCount > 1 ? 's' : ''} selected. Are you sure you want to go back?`,
-          [
-            { text: 'Cancel', style: 'cancel' },
-            { 
-              text: 'Discard', 
-              style: 'destructive',
-              onPress: () => {
-                exerciseStore.clearSelection();
-                // Try multiple navigation methods
-                console.log('Attempting navigation back...');
-                if (router.canGoBack()) {
-                  router.back();
-                } else {
-                  router.push('/(tabs)');
-                }
-              }
-            },
-          ]
+          () => {
+            exerciseStore.clearSelection();
+            // Try multiple navigation methods
+            console.log('Attempting navigation back...');
+            if (router.canGoBack()) {
+              router.back();
+            } else {
+              router.push('/(tabs)');
+            }
+          },
+          undefined, // onCancel - no action needed
+          'Discard',
+          'Cancel'
         );
       } else {
         // Try multiple navigation methods

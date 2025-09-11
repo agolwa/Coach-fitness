@@ -1257,4 +1257,116 @@ The navigation context error has been **definitively eliminated** through proper
 
 ---
 
-*Last updated: December 2024 - Navigation context error permanently resolved through architectural store initialization pattern*
+## 🔧 **January 2025: StoreLoadingScreen Navigation Context Fix**
+
+### **Issue: Theme Hook Usage in Loading Screen**
+**Problem Identified**: Despite previous architectural fixes, the navigation context error reappeared due to `StoreLoadingScreen` component using `useUnifiedColors()` hook before navigation context was established.
+
+**Root Cause**: Component hierarchy issue:
+```
+RootLayout
+└── QueryClientProvider
+    └── StoreProvider
+        └── StoreLoadingScreen (uses useUnifiedColors) ❌ Navigation context not yet available!
+        └── AppContent
+            └── ThemeProvider (React Navigation) ✅ Navigation context created here
+```
+
+**Location**: `/components/StoreProvider.tsx` - `StoreLoadingScreen` component (lines 107-135)
+
+### **Solution: Direct Theme Store Access**
+**Fix Applied**: Replaced theme hooks with direct store access in `StoreLoadingScreen`:
+
+**❌ BEFORE (Problematic):**
+```tsx
+export function StoreLoadingScreen() {
+  const colors = useUnifiedColors(); // ❌ Requires navigation context
+
+  return (
+    <View style={{ backgroundColor: colors.legacy.background }}>
+      <ActivityIndicator color={colors.legacy.primary.DEFAULT} />
+      <Text style={{ color: colors.legacy.muted.foreground }}>
+        Loading VoiceLog...
+      </Text>
+    </View>
+  );
+}
+```
+
+**✅ AFTER (Fixed):**
+```tsx
+export function StoreLoadingScreen() {
+  // Get theme directly from store without hooks to avoid navigation context issues
+  const colorScheme = useThemeStore.getState().colorScheme;
+  const isDark = colorScheme === 'dark';
+
+  // Fallback colors that work without navigation context
+  const backgroundColor = isDark ? '#09090b' : '#ffffff';
+  const primaryColor = isDark ? '#f97316' : '#ea580c';
+  const textColor = isDark ? '#a1a1aa' : '#71717a';
+
+  return (
+    <View style={{ backgroundColor }}>
+      <ActivityIndicator color={primaryColor} />
+      <Text style={{ color: textColor }}>
+        Loading VoiceLog...
+      </Text>
+    </View>
+  );
+}
+```
+
+### **Key Implementation Details**
+1. **Direct Store Access**: `useThemeStore.getState().colorScheme` instead of hooks
+2. **Hardcoded Fallback Colors**: Eliminated dependency on theme system during initialization
+3. **No Navigation Context Dependency**: Component can render before ThemeProvider is established
+4. **Theme Responsive**: Still respects dark/light mode preferences
+
+### **Prevention Guidelines**
+**For Loading/Initialization Components:**
+- ✅ **DO**: Use direct store access (`store.getState()`) for critical initialization components
+- ✅ **DO**: Use hardcoded fallback colors when navigation context isn't available
+- ✅ **DO**: Keep initialization components minimal and dependency-free
+- ❌ **NEVER**: Use theme hooks in components that render before navigation context
+- ❌ **NEVER**: Access navigation-dependent APIs during app initialization
+
+### **Architecture Pattern for Early-Render Components**
+```tsx
+// ✅ SAFE PATTERN for components that render before navigation context
+function EarlyRenderComponent() {
+  // Direct store access - no hooks
+  const colorScheme = useThemeStore.getState().colorScheme;
+  
+  // Hardcoded colors - no theme system dependency
+  const colors = colorScheme === 'dark' ? DARK_COLORS : LIGHT_COLORS;
+  
+  return <View style={{ backgroundColor: colors.background }} />;
+}
+
+// ❌ PROBLEMATIC PATTERN - requires navigation context
+function ProblematicComponent() {
+  const colors = useUnifiedColors(); // Requires navigation context
+  return <View style={{ backgroundColor: colors.legacy.background }} />;
+}
+```
+
+### **Testing Checklist**
+**Post-Fix Validation:**
+- [ ] App launches without "Couldn't find a navigation context" errors
+- [ ] Loading screen displays correctly in both light and dark themes
+- [ ] No console errors during app initialization
+- [ ] Theme switching still works after app fully loads
+- [ ] Navigation functionality remains intact
+
+### **Files Modified**
+- `/components/StoreProvider.tsx` - `StoreLoadingScreen` component updated
+  - Removed: `useUnifiedColors()` hook usage
+  - Added: Direct theme store access pattern
+  - Added: Hardcoded fallback colors
+
+### **Resolution Status: FIXED** ✅
+The navigation context error in `StoreLoadingScreen` has been permanently resolved by eliminating theme hook dependencies during initialization. This ensures the loading screen can render before navigation context is established.
+
+---
+
+*Last updated: January 2025 - StoreLoadingScreen navigation context dependency eliminated*

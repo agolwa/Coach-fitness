@@ -16,7 +16,6 @@ import {
   TouchableOpacity,
   ScrollView,
   Switch,
-  Alert,
   Platform,
   ActivityIndicator,
 } from 'react-native';
@@ -40,6 +39,9 @@ import {
 // Types
 import type { WeightUnit } from '@/types/workout';
 import type { APIError } from '@/services/api-client';
+
+// Alert utilities
+import { showDestructive, showConfirm, showError, showInfo } from '@/utils/alert-utils';
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
@@ -91,77 +93,54 @@ export default function ProfileScreen() {
 
   // Alert handlers for destructive actions
   const handleDeleteAccount = () => {
-    Alert.alert(
+    showDestructive(
       'Delete Account',
       'Are you sure you want to delete your account? This action cannot be undone and all your workout data will be permanently lost.',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Delete Account',
-          style: 'destructive',
-          onPress: () => {
-            // Show a second confirmation dialog
-            Alert.alert(
-              'Final Warning',
-              'This will permanently delete your account and all data. Type "DELETE" to confirm.',
-              [
-                {
-                  text: 'Cancel',
-                  style: 'cancel',
-                },
-                {
-                  text: 'I Understand',
-                  style: 'destructive',
-                  onPress: () => {
-                    // TODO: Implement account deletion API call
-                    // For now, just sign out the user
-                    console.log('Account deletion requested - not implemented yet');
-                    Alert.alert(
-                      'Feature Not Available',
-                      'Account deletion is not yet implemented. Please contact support to delete your account.',
-                      [{ text: 'OK', style: 'default' }]
-                    );
-                  },
-                },
-              ]
+      () => {
+        // Show a second confirmation dialog
+        showDestructive(
+          'Final Warning',
+          'This will permanently delete your account and all data. Type "DELETE" to confirm.',
+          () => {
+            // TODO: Implement account deletion API call
+            // For now, just sign out the user
+            console.log('Account deletion requested - not implemented yet');
+            showInfo(
+              'Feature Not Available',
+              'Account deletion is not yet implemented. Please contact support to delete your account.'
             );
           },
-        },
-      ]
+          undefined,
+          'I Understand',
+          'Cancel'
+        );
+      },
+      undefined,
+      'Delete Account',
+      'Cancel'
     );
   };
 
   const handleSignOut = () => {
-    Alert.alert(
+    showConfirm(
       'Sign Out',
       "Are you sure you want to sign out? You'll need to sign back in to access your workouts.",
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Sign Out',
-          style: 'default',
-          onPress: () => {
-            logoutMutation.mutate(undefined, {
-              onError: (error: APIError) => {
-                console.error('Logout failed:', error);
-                // Still perform local logout if server logout fails
-                signOut();
-                Alert.alert(
-                  'Sign Out',
-                  'Signed out locally. Server logout may have failed.',
-                  [{ text: 'OK', style: 'default' }]
-                );
-              },
-            });
+      () => {
+        logoutMutation.mutate(undefined, {
+          onError: (error: APIError) => {
+            console.error('Logout failed:', error);
+            // Still perform local logout if server logout fails
+            signOut();
+            showInfo(
+              'Sign Out',
+              'Signed out locally. Server logout may have failed.'
+            );
           },
-        },
-      ]
+        });
+      },
+      undefined,
+      'Sign Out',
+      'Cancel'
     );
   };
 
@@ -169,10 +148,9 @@ export default function ProfileScreen() {
     const newUnit: WeightUnit = value ? 'lbs' : 'kg';
     
     if (!canChangeWeightUnit) {
-      Alert.alert(
+      showError(
         'Cannot Update Units',
-        'Cannot update units during a workout. Complete the workout and try again.',
-        [{ text: 'OK', style: 'default' }]
+        'Cannot update units during a workout. Complete the workout and try again.'
       );
       return;
     }
@@ -196,10 +174,9 @@ export default function ProfileScreen() {
             const revertedUnit: WeightUnit = value ? 'kg' : 'lbs';
             setWeightUnit(revertedUnit);
             
-            Alert.alert(
+            showError(
               'Sync Failed',
-              'Failed to save preference to server. Your change has been reverted.',
-              [{ text: 'OK', style: 'default' }]
+              'Failed to save preference to server. Your change has been reverted.'
             );
           },
         }

@@ -15,7 +15,6 @@ import {
   Text,
   TouchableOpacity,
   ScrollView,
-  Alert,
   ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -26,6 +25,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useWorkoutStore } from '@/stores/workout-store';
 import { useUserStore } from '@/stores/user-store';
 import { useUnifiedColors } from '@/hooks/use-unified-theme';
+import { showConfirm, showSuccess, showAlert } from '@/utils/alert-utils';
 
 // Type imports
 import type { WorkoutHistoryItem, WorkoutExercise } from '@/types/workout';
@@ -134,63 +134,53 @@ export default function ActivityScreen() {
 
   // Handle add to current session
   const handleAddToCurrentSession = (workout: WorkoutHistoryItem) => {
-    Alert.alert(
+    showConfirm(
       'Add to Current Session',
       `Add all exercises from "${workout.title}" to your current workout?`,
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Add',
-          style: 'default',
-          onPress: () => {
-            // Convert workout exercises to current session format
-            const exercisesToAdd: WorkoutExercise[] = workout.exercises.map(exercise => ({
-              id: Date.now() + Math.random(),
-              name: exercise.name,
-              sets: exercise.detailSets.map((set, index) => ({
-                set: (index + 1).toString(),
-                weight: set.weight.toString(),
-                reps: set.reps.toString(),
-                notes: set.notes
-              })),
-              detailSets: exercise.detailSets.map((set, index) => ({
-                id: index + 1,
-                weight: set.weight,
-                reps: set.reps,
-                notes: set.notes
-              })),
-              weightUnit: workout.weightUnit
-            }));
-            
-            workoutStore.addToCurrentSession(exercisesToAdd);
-            
-            // Show success feedback
-            Alert.alert(
-              'Success',
-              `Added ${exercisesToAdd.length} exercises to your current session!`,
-              [{ text: 'OK' }]
-            );
-          },
-        },
-      ]
+      () => {
+        // Convert workout exercises to current session format
+        const exercisesToAdd: WorkoutExercise[] = workout.exercises.map(exercise => ({
+          id: Date.now() + Math.random(),
+          name: exercise.name,
+          sets: exercise.detailSets.map((set, index) => ({
+            set: (index + 1).toString(),
+            weight: set.weight.toString(),
+            reps: set.reps.toString(),
+            notes: set.notes
+          })),
+          detailSets: exercise.detailSets.map((set, index) => ({
+            id: index + 1,
+            weight: set.weight,
+            reps: set.reps,
+            notes: set.notes
+          })),
+          weightUnit: workout.weightUnit
+        }));
+        
+        workoutStore.addToCurrentSession(exercisesToAdd);
+        
+        // Show success feedback
+        showSuccess(
+          'Success',
+          `Added ${exercisesToAdd.length} exercises to your current session!`
+        );
+      }
     );
   };
 
   // Handle date filter selection
   const showDateFilterPicker = () => {
-    const options = dateFilterOptions.map(option => ({
-      text: option.label,
-      onPress: () => setDateFilter(option.value),
-      style: dateFilter === option.value ? 'default' as const : 'cancel' as const,
-    }));
+    // Create buttons for each date filter option
+    const buttons = [
+      ...dateFilterOptions.map(option => ({
+        text: option.label,
+        onPress: () => setDateFilter(option.value),
+        style: dateFilter === option.value ? 'default' as const : 'cancel' as const,
+      })),
+      { text: 'Cancel', style: 'cancel' as const },
+    ];
 
-    Alert.alert('Filter by Date', 'Select time period to view', [
-      ...options,
-      { text: 'Cancel', style: 'cancel' },
-    ]);
+    showAlert('Filter by Date', 'Select time period to view', buttons);
   };
 
   // Colors already available from useUnifiedColors hook

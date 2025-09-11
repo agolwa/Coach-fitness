@@ -10,7 +10,6 @@ import {
   TouchableOpacity,
   ScrollView,
   TextInput,
-  Alert,
   ActivityIndicator,
   Platform,
 } from 'react-native';
@@ -23,6 +22,7 @@ import * as Haptics from 'expo-haptics';
 import { useWorkoutStore } from '@/stores/workout-store';
 import { useUserStore } from '@/stores/user-store';
 import { useUnifiedColors } from '@/hooks/use-unified-theme';
+import { showSuccess, showError, showConfirm, showAlert } from '@/utils/alert-utils';
 
 // Type imports
 import type { WorkoutHistoryItem, WorkoutExercise } from '@/types/workout';
@@ -133,11 +133,11 @@ export default function WorkoutDetailScreen() {
         workoutStore.updateWorkoutInHistory(workout.id, { title: trimmedTitle });
         
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        Alert.alert('Success', 'Workout title updated successfully!');
+        showSuccess('Success', 'Workout title updated successfully!');
       } catch (error) {
         console.error('Error updating workout title:', error);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-        Alert.alert('Error', 'Failed to update workout title. Please try again.');
+        showError('Error', 'Failed to update workout title. Please try again.');
       } finally {
         setIsLoading(false);
       }
@@ -153,74 +153,64 @@ export default function WorkoutDetailScreen() {
   };
 
   const handleAddToCurrentSession = () => {
-    Alert.alert(
+    showConfirm(
       'Add to Current Session',
       `Add all ${workout.exercises.length} exercises from "${workout.title}" to your current workout?`,
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Add Exercises',
-          style: 'default',
-          onPress: async () => {
-            setIsLoading(true);
-            
-            try {
-              // Convert workout exercises to current session format
-              const exercisesToAdd: WorkoutExercise[] = workout.exercises.map(exercise => ({
-                id: Date.now() + Math.random(),
-                name: exercise.name,
-                sets: exercise.detailSets?.map((set, index) => ({
-                  set: (index + 1).toString(),
-                  weight: set.weight.toString(),
-                  reps: set.reps.toString(),
-                  notes: set.notes || ''
-                })) || [],
-                detailSets: exercise.detailSets?.map((set, index) => ({
-                  id: index + 1,
-                  weight: set.weight,
-                  reps: set.reps,
-                  notes: set.notes || ''
-                })) || [],
-                weightUnit: workout.weightUnit
-              }));
-              
-              // Add exercises to current session
-              workoutStore.addToCurrentSession(exercisesToAdd);
-              
-              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-              
-              // Show success message and navigate back
-              Alert.alert(
-                'Success!',
-                `Added ${exercisesToAdd.length} exercises to your current session!`,
-                [
-                  {
-                    text: 'Continue Workout',
-                    onPress: () => {
-                      router.dismiss();
-                      router.push('/(tabs)/');
-                    }
-                  },
-                  {
-                    text: 'Stay Here',
-                    style: 'cancel'
-                  }
-                ]
-              );
-              
-            } catch (error) {
-              console.error('Error adding exercises to session:', error);
-              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-              Alert.alert('Error', 'Failed to add exercises to current session. Please try again.');
-            } finally {
-              setIsLoading(false);
-            }
-          },
-        },
-      ]
+      async () => {
+        setIsLoading(true);
+        
+        try {
+          // Convert workout exercises to current session format
+          const exercisesToAdd: WorkoutExercise[] = workout.exercises.map(exercise => ({
+            id: Date.now() + Math.random(),
+            name: exercise.name,
+            sets: exercise.detailSets?.map((set, index) => ({
+              set: (index + 1).toString(),
+              weight: set.weight.toString(),
+              reps: set.reps.toString(),
+              notes: set.notes || ''
+            })) || [],
+            detailSets: exercise.detailSets?.map((set, index) => ({
+              id: index + 1,
+              weight: set.weight,
+              reps: set.reps,
+              notes: set.notes || ''
+            })) || [],
+            weightUnit: workout.weightUnit
+          }));
+          
+          // Add exercises to current session
+          workoutStore.addToCurrentSession(exercisesToAdd);
+          
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          
+          // Show success message and navigate back
+          showAlert(
+            'Success!',
+            `Added ${exercisesToAdd.length} exercises to your current session!`,
+            [
+              {
+                text: 'Continue Workout',
+                onPress: () => {
+                  router.dismiss();
+                  router.push('/(tabs)/');
+                }
+              },
+              {
+                text: 'Stay Here',
+                style: 'cancel'
+              }
+            ]
+          );
+          
+        } catch (error) {
+          console.error('Error adding exercises to session:', error);
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+          showError('Error', 'Failed to add exercises to current session. Please try again.');
+        } finally {
+          setIsLoading(false);
+        }
+      }
     );
   };
 

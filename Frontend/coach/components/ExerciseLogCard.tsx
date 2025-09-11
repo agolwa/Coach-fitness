@@ -4,13 +4,14 @@
  */
 
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import type { WorkoutExercise, Set } from '@/types/workout';
 import * as Haptics from 'expo-haptics';
 import { useUnifiedColors } from '@/hooks/use-unified-theme';
 import { useWorkoutStore } from '@/stores/workout-store';
+import { showDestructive } from '@/utils/alert-utils';
 
 interface ExerciseLogCardProps {
   exercise: WorkoutExercise;
@@ -215,23 +216,13 @@ export function ExerciseLogCard({ exercise }: ExerciseLogCardProps) {
     setShowDeleteMenu(false);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     
-    Alert.alert(
+    showDestructive(
       'Delete Exercise',
       `Are you sure you want to delete "${exercise.name}"? This will remove all sets and cannot be undone.`,
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => {
-            deleteExercise(exercise.id);
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          },
-        },
-      ]
+      () => {
+        deleteExercise(exercise.id);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
     );
   };
 

@@ -14,7 +14,6 @@ import {
   Text, 
   TouchableOpacity, 
   Dimensions,
-  Alert,
   ActivityIndicator 
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -25,6 +24,7 @@ import { useUnifiedColors } from '@/hooks/use-unified-theme';
 import { auth } from '@/services/supabase';
 import { apiClient, GoogleAuthRequest, LoginResponse } from '@/services/api-client';
 import * as Haptics from 'expo-haptics';
+import { showError } from '@/utils/alert-utils';
 
 const { width } = Dimensions.get('window');
 
@@ -111,10 +111,9 @@ export default function SignupScreen() {
           // Sign out from Supabase if backend auth fails
           await auth.signOut();
           
-          Alert.alert(
+          showError(
             'Authentication Error',
-            'Unable to complete sign in with our servers. Please try again.',
-            [{ text: 'OK' }]
+            'Unable to complete sign in with our servers. Please try again.'
           );
           setIsSigningIn(false);
         }
@@ -162,10 +161,9 @@ export default function SignupScreen() {
         }
       }
       
-      Alert.alert(
+      showError(
         'Sign In Error',
-        errorMessage,
-        [{ text: 'OK' }]
+        errorMessage
       );
       setIsSigningIn(false);
     }

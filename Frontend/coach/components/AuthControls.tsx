@@ -7,7 +7,6 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  Alert,
   TouchableOpacity,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -19,6 +18,7 @@ import { useAuth } from '@/hooks/use-user';
 import { useUnifiedTheme } from '@/hooks/use-unified-theme';
 import AuthService from '@/services/auth-service';
 import { cn } from '@/components/ui/utils';
+import { showConfirm, showError } from '@/utils/alert-utils';
 
 export interface AuthControlsProps {
   showFullDetails?: boolean;
@@ -37,55 +37,46 @@ export function AuthControls({
   const handleSignOut = async () => {
     try {
       // Show confirmation dialog
-      Alert.alert(
+      showConfirm(
         'Sign Out',
         'Are you sure you want to sign out? Any unsaved workout data will be lost.',
-        [
-          {
-            text: 'Cancel',
-            style: 'cancel',
-          },
-          {
-            text: 'Sign Out',
-            style: 'destructive',
-            onPress: async () => {
-              setIsSigningOut(true);
+        async () => {
+          setIsSigningOut(true);
+          
+          try {
+            // Use authentication service
+            const authResult = await AuthService.signOut();
+            
+            if (authResult.success) {
+              // Update user store
+              const result = await signOut();
               
-              try {
-                // Use authentication service
-                const authResult = await AuthService.signOut();
+              if (result.success) {
+                // Call optional callback
+                onSignOut?.();
                 
-                if (authResult.success) {
-                  // Update user store
-                  const result = await signOut();
-                  
-                  if (result.success) {
-                    // Call optional callback
-                    onSignOut?.();
-                    
-                    // Navigate to signup screen
-                    router.replace('/(auth)/signup');
-                  }
-                } else {
-                  Alert.alert(
-                    'Sign Out Failed',
-                    authResult.message,
-                    [{ text: 'OK', style: 'default' }]
-                  );
-                }
-              } catch (error) {
-                console.error('Sign out error:', error);
-                Alert.alert(
-                  'Sign Out Error',
-                  'Failed to sign out. Please try again.',
-                  [{ text: 'OK', style: 'default' }]
-                );
-              } finally {
-                setIsSigningOut(false);
+                // Navigate to signup screen
+                router.replace('/(auth)/signup');
               }
-            },
-          },
-        ]
+            } else {
+              showError(
+                'Sign Out Failed',
+                authResult.message
+              );
+            }
+          } catch (error) {
+            console.error('Sign out error:', error);
+            showError(
+              'Sign Out Error',
+              'Failed to sign out. Please try again.'
+            );
+          } finally {
+            setIsSigningOut(false);
+          }
+        },
+        undefined, // onCancel
+        'Sign Out',
+        'Cancel'
       );
     } catch (error) {
       console.error('Sign out confirmation error:', error);

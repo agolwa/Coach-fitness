@@ -11,7 +11,7 @@ import { useUserStore } from '../stores/user-store';
 import { useExerciseStore } from '../stores/exercise-store';
 import { useThemeStore } from '../stores/theme-store';
 import { useNavigationStore } from '../stores/navigation-store';
-import { useUnifiedTheme, useUnifiedColors } from '../hooks/use-unified-theme';
+import { useUnifiedTheme } from '../hooks/use-unified-theme';
 import { useThemeClassManager } from '../utils/theme-class-manager';
 
 interface StoreProviderProps {
@@ -102,9 +102,17 @@ export function useStoreInitialization() {
 
 /**
  * Loading screen component for store initialization
+ * Uses direct theme store access to avoid navigation context dependency
  */
 export function StoreLoadingScreen() {
-  const colors = useUnifiedColors();
+  // Get theme directly from store without hooks to avoid navigation context issues
+  const colorScheme = useThemeStore.getState().colorScheme;
+  const isDark = colorScheme === 'dark';
+
+  // Fallback colors that work without navigation context
+  const backgroundColor = isDark ? '#09090b' : '#ffffff';
+  const primaryColor = isDark ? '#f97316' : '#ea580c';
+  const textColor = isDark ? '#a1a1aa' : '#71717a';
 
   return (
     <View 
@@ -112,18 +120,18 @@ export function StoreLoadingScreen() {
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: colors.legacy.background,
+        backgroundColor,
         paddingHorizontal: 20,
       }}
     >
       <View style={{ alignItems: 'center' }}>
         <ActivityIndicator 
           size="large" 
-          color={colors.legacy.primary.DEFAULT}
+          color={primaryColor}
           style={{ marginBottom: 16 }}
         />
         <Text style={{ 
-          color: colors.legacy.muted.foreground,
+          color: textColor,
           fontSize: 16,
           textAlign: 'center'
         }}>

@@ -16,7 +16,6 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
-  Alert,
   Keyboard,
   Animated,
   Modal,
@@ -40,6 +39,7 @@ import {
   type UpdateWorkoutRequest
 } from '@/hooks/use-workouts';
 import type { APIError } from '@/services/api-client';
+import { showError, showConfirm, showInfo } from '@/utils/alert-utils';
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
@@ -179,17 +179,15 @@ export default function HomeScreen() {
           console.log('Network error while offline - continuing with local workout');
         } else if (isNetworkError) {
           // Show gentle network error message
-          Alert.alert(
+          showInfo(
             'Connection Issue',
-            'Unable to sync with server. Your workout will be saved locally.',
-            [{ text: 'OK' }]
+            'Unable to sync with server. Your workout will be saved locally.'
           );
         } else {
           // Show error for non-network issues
-          Alert.alert(
+          showError(
             'Error Creating Workout',
-            'There was an issue creating your workout. Please try again.',
-            [{ text: 'OK' }]
+            'There was an issue creating your workout. Please try again.'
           );
         }
       } finally {
@@ -205,34 +203,26 @@ export default function HomeScreen() {
   const handleClearExercises = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     
-    Alert.alert(
+    showConfirm(
       'Clear All Exercises',
       'Are you sure you want to clear all exercises? This action cannot be undone.',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Clear',
-          style: 'destructive',
-          onPress: () => {
-            clearWorkout();
-            setWorkoutTitle('');
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          },
-        },
-      ]
+      () => {
+        clearWorkout();
+        setWorkoutTitle('');
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      },
+      undefined, // onCancel
+      'Clear',
+      'Cancel'
     );
   };
 
   // Handle end workout
   const handleEndWorkout = () => {
     if (!canEndWorkout()) {
-      Alert.alert(
+      showError(
         'No Data to Save',
-        'Add some sets with reps and weights before ending your workout.',
-        [{ text: 'OK' }]
+        'Add some sets with reps and weights before ending your workout.'
       );
       return;
     }
@@ -247,28 +237,21 @@ export default function HomeScreen() {
     setIsEndingWorkout(true);
     
     if (authState === 'guest') {
-      Alert.alert(
+      showConfirm(
         'Sign up to save workout',
         'Your workout data will be lost unless you sign up. Would you like to sign up now?',
-        [
-          {
-            text: 'Continue as Guest',
-            style: 'destructive',
-            onPress: () => {
-              endWorkout(); // Just clear workout for guests
-              setWorkoutTitle('');
-              setIsEndingWorkout(false);
-              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            },
-          },
-          {
-            text: 'Sign Up',
-            onPress: () => {
-              setIsEndingWorkout(false);
-              router.push('/(auth)/signup');
-            },
-          },
-        ]
+        () => {
+          setIsEndingWorkout(false);
+          router.push('/(auth)/signup');
+        },
+        () => {
+          endWorkout(); // Just clear workout for guests
+          setWorkoutTitle('');
+          setIsEndingWorkout(false);
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        },
+        'Sign Up',
+        'Continue as Guest'
       );
     } else {
       // Save workout for signed-in users
@@ -308,10 +291,9 @@ export default function HomeScreen() {
           await saveWorkout(); // Save locally as backup
           setWorkoutTitle('');
           
-          Alert.alert(
+          showInfo(
             'Saved Locally',
-            'Workout saved offline. It will sync when connection is restored.',
-            [{ text: 'OK' }]
+            'Workout saved offline. It will sync when connection is restored.'
           );
           
           // Show celebration for local save
@@ -324,10 +306,9 @@ export default function HomeScreen() {
           }, WORKOUT_CONSTANTS.CELEBRATION_DURATION) as any;
           
         } catch (localError) {
-          Alert.alert(
+          showError(
             'Error Saving Workout',
-            'There was an issue saving your workout. Please try again.',
-            [{ text: 'OK' }]
+            'There was an issue saving your workout. Please try again.'
           );
           console.error('Failed to save workout locally:', localError);
         }

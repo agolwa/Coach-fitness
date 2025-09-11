@@ -15,7 +15,6 @@ import {
   Text,
   TextInput,
   ScrollView,
-  Alert,
   StatusBar,
   ActivityIndicator,
   TouchableOpacity,
@@ -28,6 +27,7 @@ import * as Haptics from 'expo-haptics';
 import { useWorkoutStore } from '../../stores/workout-store';
 import { useUserStore } from '../../stores/user-store';
 import { useUnifiedColors } from '../../hooks/use-unified-theme';
+import { showDestructive } from '@/utils/alert-utils';
 import type { DetailSet } from '../../types/workout';
 
 // Set interface for this screen
@@ -262,38 +262,28 @@ export default function ExerciseDetailScreen() {
   const handleDeleteSet = () => {
     if (selectedSetId === null) return;
     
-    Alert.alert(
+    showDestructive(
       'Delete Set',
       'Are you sure you want to delete this set?',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => {
-            const updatedSets = currentSets.filter(set => set.id !== selectedSetId);
-            setCurrentSets(updatedSets);
+      () => {
+        const updatedSets = currentSets.filter(set => set.id !== selectedSetId);
+        setCurrentSets(updatedSets);
 
-            // Update workout store
-            if (exerciseId) {
-              const detailSets: DetailSet[] = updatedSets.map((set, index) => ({
-                id: index + 1,
-                weight: set.weight,
-                reps: set.reps,
-                notes: set.notes,
-              }));
-              updateExerciseSets(exerciseId, detailSets);
-            }
+        // Update workout store
+        if (exerciseId) {
+          const detailSets: DetailSet[] = updatedSets.map((set, index) => ({
+            id: index + 1,
+            weight: set.weight,
+            reps: set.reps,
+            notes: set.notes,
+          }));
+          updateExerciseSets(exerciseId, detailSets);
+        }
 
-            setSelectedSetId(null);
-            resetForm();
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          },
-        },
-      ]
+        setSelectedSetId(null);
+        resetForm();
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
     );
   };
 

@@ -10,7 +10,6 @@ import {
   TouchableOpacity,
   ScrollView,
   TextInput,
-  Alert,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
@@ -21,6 +20,7 @@ import { Haptics } from 'expo-haptics';
 
 // Hooks
 import { useUnifiedColors } from '@/hooks/use-unified-theme';
+import { showSuccess, showError, showAlert } from '@/utils/alert-utils';
 
 export default function FeedbackScreen() {
   const insets = useSafeAreaInsets();
@@ -66,13 +66,13 @@ export default function FeedbackScreen() {
   const handleSubmit = async () => {
     if (suggestion.trim().length === 0) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert('Error', 'Please enter your feedback');
+      showError('Error', 'Please enter your feedback');
       return;
     }
 
     if (!hasMeaningfulContent(suggestion)) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert('Error', 'Please enter meaningful feedback text');
+      showError('Error', 'Please enter meaningful feedback text');
       return;
     }
 
@@ -87,7 +87,7 @@ export default function FeedbackScreen() {
       
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       
-      Alert.alert(
+      showAlert(
         'Thank You!',
         'Your feedback has been submitted successfully. We appreciate your input and will review it carefully.',
         [
@@ -104,7 +104,7 @@ export default function FeedbackScreen() {
     } catch (error) {
       console.error('Error submitting feedback:', error);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert(
+      showAlert(
         'Submission Failed',
         'We couldn\'t submit your feedback right now. Please try again later or contact support.',
         [{ text: 'OK' }]
@@ -273,7 +273,7 @@ export default function FeedbackScreen() {
             <TouchableOpacity
               onPress={() => {
                 // You could implement email functionality here
-                Alert.alert('Email', 'feedback@fitlogger.com');
+                showAlert('Email', 'feedback@fitlogger.com', [{ text: 'OK' }]);
               }}
               className="flex-row items-center justify-center gap-2"
               activeOpacity={0.7}

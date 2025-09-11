@@ -14,6 +14,7 @@ import { useUserStore } from '@/stores/user-store';
 import { useThemeStore } from '@/stores/theme-store';
 import { initializeThemeClassManager } from '@/utils/theme-class-manager';
 import StoreInitializer from '@/stores/store-initializer';
+import { AlertProvider } from '@/contexts/AlertContext';
 
 // QueryClient configuration for React Query
 const queryClient = new QueryClient({
@@ -114,7 +115,9 @@ function AppContent() {
   return (
     <View className={colorScheme === 'dark' ? 'dark flex-1' : 'flex-1'}>
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <ThemedAppContent />
+        <AlertProvider>
+          <ThemedAppContent />
+        </AlertProvider>
       </ThemeProvider>
     </View>
   );

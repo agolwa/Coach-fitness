@@ -10,7 +10,6 @@ import {
   TouchableOpacity,
   ScrollView,
   Linking,
-  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -18,6 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 // Hooks
 import { useUnifiedColors } from '@/hooks/use-unified-theme';
+import { showAlert, showError } from '@/utils/alert-utils';
 
 export default function ContactScreen() {
   const insets = useSafeAreaInsets();
@@ -33,7 +33,7 @@ export default function ContactScreen() {
         if (supported) {
           return Linking.openURL(mailtoUrl);
         } else {
-          Alert.alert(
+          showAlert(
             'Email Client Not Available',
             `Please email us directly at: ${email}`,
             [{ text: 'OK' }]
@@ -42,7 +42,7 @@ export default function ContactScreen() {
       })
       .catch((error) => {
         console.error('Error opening email client:', error);
-        Alert.alert('Error', `Please email us at: ${email}`);
+        showError('Error', `Please email us at: ${email}`);
       });
   };
 
@@ -54,7 +54,7 @@ export default function ContactScreen() {
         if (supported) {
           return Linking.openURL(telUrl);
         } else {
-          Alert.alert(
+          showAlert(
             'Phone App Not Available',
             `Please call us at: ${phoneNumber}`,
             [{ text: 'OK' }]
@@ -63,7 +63,7 @@ export default function ContactScreen() {
       })
       .catch((error) => {
         console.error('Error opening phone app:', error);
-        Alert.alert('Error', `Please call us at: ${phoneNumber}`);
+        showError('Error', `Please call us at: ${phoneNumber}`);
       });
   };
 
@@ -73,12 +73,12 @@ export default function ContactScreen() {
         if (supported) {
           return Linking.openURL(url);
         } else {
-          Alert.alert('Error', 'Cannot open website at this time.');
+          showError('Error', 'Cannot open website at this time.');
         }
       })
       .catch((error) => {
         console.error('Error opening website:', error);
-        Alert.alert('Error', 'Cannot open website at this time.');
+        showError('Error', 'Cannot open website at this time.');
       });
   };
 
