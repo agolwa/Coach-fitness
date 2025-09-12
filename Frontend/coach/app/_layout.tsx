@@ -1,5 +1,5 @@
 import React from 'react';
-import { View } from 'react-native';
+import { View, Platform } from 'react-native';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
@@ -12,7 +12,7 @@ import { useUnifiedTheme } from '@/hooks/use-unified-theme';
 import { StoreProvider, useStoreInitialization, StoreLoadingScreen } from '@/components/StoreProvider';
 import { useUserStore } from '@/stores/user-store';
 import { useThemeStore } from '@/stores/theme-store';
-import { initializeThemeClassManager } from '@/utils/theme-class-manager';
+import { initializeThemeClassManager, useThemeClassManager } from '@/utils/theme-class-manager';
 import StoreInitializer from '@/stores/store-initializer';
 import { AlertProvider } from '@/contexts/AlertContext';
 
@@ -51,9 +51,11 @@ const queryClient = new QueryClient({
   },
 });
 
-// New component that safely uses theme hooks after ThemeProvider is established
+// Main app component that handles initialization and rendering after navigation context exists
 function ThemedAppContent() {
   const { isDark } = useUnifiedTheme();
+  const { manager } = useThemeClassManager();
+  const currentColorScheme = useThemeStore(state => state.colorScheme);
   
   // Initialize store side effects AFTER navigation context is ready
   React.useEffect(() => {
@@ -66,6 +68,11 @@ function ThemedAppContent() {
       StoreInitializer.cleanup();
     };
   }, []);
+
+  // Synchronize theme class manager with theme store changes (moved from StoreProvider)
+  React.useEffect(() => {
+    manager.setColorScheme(currentColorScheme);
+  }, [currentColorScheme, manager]);
   
   return (
     <>
@@ -81,30 +88,14 @@ function ThemedAppContent() {
   );
 }
 
+// Wrapper component that provides theme context without navigation dependencies
 function AppContent() {
-  // Use React state to avoid triggering re-renders during store initialization
-  const [colorScheme, setColorScheme] = React.useState<'light' | 'dark'>('light');
-  const { isInitialized, hasErrors } = useStoreInitialization();
-  const { authState, isLoading } = useUserStore();
+  const { isInitialized, hasErrors, userLoading } = useStoreInitialization();
+  const isDark = useThemeStore.getState().colorScheme === 'dark';
+  const isAndroid = Platform.OS === 'android';
 
-  // Subscribe to theme changes after component mounts
-  React.useEffect(() => {
-    // Get initial value
-    setColorScheme(useThemeStore.getState().colorScheme);
-    
-    // Subscribe to changes
-    const unsubscribe = useThemeStore.subscribe(
-      (state) => state.colorScheme,
-      (scheme) => {
-        console.log('AppContent: Theme changed to:', scheme);
-        setColorScheme(scheme);
-      }
-    );
-
-    return unsubscribe;
-  }, []);
-
-  if (!isInitialized || isLoading) {
+  // Show loading screen while stores are initializing
+  if (!isInitialized || userLoading) {
     return <StoreLoadingScreen />;
   }
 
@@ -112,16 +103,41 @@ function AppContent() {
     console.warn('Store initialization errors detected:', hasErrors);
   }
 
-  return (
-    <View className="flex-1" style={{ flex: 1 }} key="app-root">
-      <View className={colorScheme === 'dark' ? 'dark' : ''} style={{ flex: 1 }}>
-        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+  // ThemedAppContent now handles all initialization and loading states
+  if (isAndroid) {
+    // For Android: ThemeProvider after store initialization (when navigation context is ready)
+    return (
+      <AndroidThemeWrapper />
+    );
+  } else {
+    // For iOS: ThemeProvider already at root level
+    return (
+      <View className="flex-1" style={{ flex: 1 }} key="app-root">
+        <View className={isDark ? 'dark' : ''} style={{ flex: 1 }}>
           <AlertProvider>
             <ThemedAppContent />
           </AlertProvider>
-        </ThemeProvider>
+        </View>
       </View>
-    </View>
+    );
+  }
+}
+
+// Android-specific wrapper that ensures navigation context is ready
+function AndroidThemeWrapper() {
+  const colorScheme = useThemeStore(state => state.colorScheme);
+  const isDark = colorScheme === 'dark';
+
+  return (
+    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+      <View className="flex-1" style={{ flex: 1 }} key="app-root">
+        <View className={isDark ? 'dark' : ''} style={{ flex: 1 }}>
+          <AlertProvider>
+            <ThemedAppContent />
+          </AlertProvider>
+        </View>
+      </View>
+    </ThemeProvider>
   );
 }
 
@@ -130,9 +146,26 @@ export default function RootLayout() {
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
 
+  // Get theme directly from store to avoid hooks that might access navigation
+  const colorScheme = useThemeStore.getState().colorScheme;
+  const [currentColorScheme, setCurrentColorScheme] = React.useState(colorScheme);
+  const isIOS = Platform.OS === 'ios';
+
   // Initialize theme class manager early
   React.useEffect(() => {
     initializeThemeClassManager();
+  }, []);
+
+  // Subscribe to theme changes after mount
+  React.useEffect(() => {
+    const unsubscribe = useThemeStore.subscribe(
+      (state) => state.colorScheme,
+      (scheme) => {
+        console.log('RootLayout: Theme changed to:', scheme);
+        setCurrentColorScheme(scheme);
+      }
+    );
+    return unsubscribe;
   }, []);
 
   if (!loaded) {
@@ -140,11 +173,26 @@ export default function RootLayout() {
     return null;
   }
 
-  return (
-    <QueryClientProvider client={queryClient}>
-      <StoreProvider>
-        <AppContent />
-      </StoreProvider>
-    </QueryClientProvider>
-  );
+  // Platform-specific provider structure
+  if (isIOS) {
+    // iOS: ThemeProvider at root level (before StoreProvider)
+    return (
+      <ThemeProvider value={currentColorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+        <QueryClientProvider client={queryClient}>
+          <StoreProvider>
+            <AppContent />
+          </StoreProvider>
+        </QueryClientProvider>
+      </ThemeProvider>
+    );
+  } else {
+    // Android: No ThemeProvider at root (handled in AppContent)
+    return (
+      <QueryClientProvider client={queryClient}>
+        <StoreProvider>
+          <AppContent />
+        </StoreProvider>
+      </QueryClientProvider>
+    );
+  }
 }

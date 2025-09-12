@@ -283,7 +283,7 @@ const cleanupAppStateHandling = () => {
 };
 
 // Auto-setup when store is created
-setupAppStateHandling();
+// setupAppStateHandling(); // Moved to StoreInitializer for proper timing
 
 // Export utilities
 export { setupAppStateHandling, cleanupAppStateHandling };

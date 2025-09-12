@@ -11,67 +11,24 @@ import { useUserStore } from '../stores/user-store';
 import { useExerciseStore } from '../stores/exercise-store';
 import { useThemeStore } from '../stores/theme-store';
 import { useNavigationStore } from '../stores/navigation-store';
-import { useUnifiedTheme } from '../hooks/use-unified-theme';
-import { useThemeClassManager } from '../utils/theme-class-manager';
 
 interface StoreProviderProps {
   children: React.ReactNode;
 }
 
 export function StoreProvider({ children }: StoreProviderProps) {
-  const initializeWorkout = useWorkoutStore(state => state.initializeWorkout);
-  const initializeUser = useUserStore(state => state.initializeUser);
-  const loadExercises = useExerciseStore(state => state.loadExercises);
-  const initializeTheme = useThemeStore(state => state.initializeTheme);
-  const initializeNavigation = useNavigationStore(state => state.initializeNavigation);
-
-  // Theme class manager for synchronization
-  const { manager } = useThemeClassManager();
-  const currentColorScheme = useThemeStore(state => state.colorScheme);
-
   // Sync weight unit changes between workout and user stores
   const workoutExercises = useWorkoutStore(state => state.exercises);
   const setCanChangeWeightUnit = useUserStore(state => state.setCanChangeWeightUnit);
 
-  // Initialize all stores on mount (non-blocking)
-  useEffect(() => {
-    const initializeStores = async () => {
-      try {
-        console.log('Starting store initialization...');
-        
-        // Initialize stores in parallel - don't await, let them load in background
-        Promise.all([
-          initializeTheme?.() || Promise.resolve(),
-          initializeUser?.() || Promise.resolve(),
-          loadExercises?.() || Promise.resolve(),
-          initializeWorkout?.() || Promise.resolve(),
-          initializeNavigation?.() || Promise.resolve(),
-        ]).then(async () => {
-          console.log('All stores initialized successfully');
-        }).catch((error) => {
-          console.warn('Some stores failed to initialize:', error);
-          // Continue anyway - don't block the app
-        });
-        
-      } catch (error) {
-        console.warn('Failed to initialize stores:', error);
-        // Continue anyway - don't block the app
-      }
-    };
-
-    initializeStores();
-  }, [initializeTheme, initializeUser, loadExercises, initializeWorkout, initializeNavigation]);
+  // Store initialization is now handled by StoreInitializer inside ThemedAppContent
+  // to ensure navigation context is available.
 
   // Sync weight unit locking with workout state
   useEffect(() => {
     const hasActiveWorkout = workoutExercises.length > 0;
     setCanChangeWeightUnit(!hasActiveWorkout);
   }, [workoutExercises.length, setCanChangeWeightUnit]);
-
-  // Synchronize theme class manager with theme store changes
-  useEffect(() => {
-    manager.setColorScheme(currentColorScheme);
-  }, [currentColorScheme, manager]);
 
   return <>{children}</>;
 }

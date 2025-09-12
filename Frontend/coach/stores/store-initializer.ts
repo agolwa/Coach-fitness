@@ -7,6 +7,10 @@
 import { Appearance } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useThemeStore } from './theme-store';
+import { useUserStore } from './user-store';
+import { useExerciseStore } from './exercise-store';
+import { useWorkoutStore } from './workout-store';
+import { useNavigationStore, setupAppStateHandling, cleanupAppStateHandling } from './navigation-store';
 
 export class StoreInitializer {
   private static initialized = false;
@@ -27,6 +31,23 @@ export class StoreInitializer {
     try {
       // Initialize theme store appearance listener
       this.initializeThemeListener();
+      
+      // Initialize navigation store AppState handling
+      setupAppStateHandling();
+      console.log('StoreInitializer: Navigation AppState handler initialized');
+
+      // Initialize all data stores
+      Promise.all([
+        useThemeStore.getState().initializeTheme?.() || Promise.resolve(),
+        useUserStore.getState().initializeUser?.() || Promise.resolve(),
+        useExerciseStore.getState().loadExercises?.() || Promise.resolve(),
+        useWorkoutStore.getState().initializeWorkout?.() || Promise.resolve(),
+        useNavigationStore.getState().initializeNavigation?.() || Promise.resolve(),
+      ]).then(() => {
+        console.log('StoreInitializer: All stores initialized successfully');
+      }).catch((error) => {
+        console.warn('StoreInitializer: Some stores failed to initialize:', error);
+      });
 
       this.initialized = true;
       console.log('StoreInitializer: Initialization complete');
@@ -43,6 +64,10 @@ export class StoreInitializer {
       this.appearanceListener.remove();
       this.appearanceListener = null;
     }
+    
+    // Clean up navigation store AppState handling
+    cleanupAppStateHandling();
+    console.log('StoreInitializer: Navigation AppState handler cleaned up');
 
     this.initialized = false;
     console.log('StoreInitializer: Cleanup complete');
