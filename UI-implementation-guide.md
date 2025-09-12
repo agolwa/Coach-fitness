@@ -1557,6 +1557,150 @@ function AppContent() {
 }
 ```
 
+---
+
+## **✅ FINAL WORKING SOLUTION: Platform-Specific Theme Implementation**
+**Date**: January 2025  
+**Status**: ✅ CONFIRMED WORKING - Both iOS and Android  
+**Issue Resolved**: Navigation context errors on Android with proper theme switching on both platforms
+
+### **Implementation Details**
+
+This is the final working implementation that successfully handles both iOS and Android platform-specific requirements:
+
+```tsx
+// app/_layout.tsx - FINAL WORKING VERSION
+import React from 'react';
+import { View, Platform } from 'react-native';
+import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+// ... other imports
+
+// Android-specific wrapper that ensures navigation context is ready
+function AndroidThemeWrapper() {
+  const colorScheme = useThemeStore(state => state.colorScheme);
+  const isDark = colorScheme === 'dark';
+
+  return (
+    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+      <View className="flex-1" style={{ flex: 1 }} key="app-root">
+        <View className={isDark ? 'dark' : ''} style={{ flex: 1 }}>
+          <AlertProvider>
+            <ThemedAppContent />
+          </AlertProvider>
+        </View>
+      </View>
+    </ThemeProvider>
+  );
+}
+
+// Wrapper component that provides theme context without navigation dependencies
+function AppContent() {
+  const { isInitialized, hasErrors, userLoading } = useStoreInitialization();
+  const isDark = useThemeStore.getState().colorScheme === 'dark';
+  const isAndroid = Platform.OS === 'android';
+
+  // Show loading screen while stores are initializing
+  if (!isInitialized || userLoading) {
+    return <StoreLoadingScreen />;
+  }
+
+  if (hasErrors) {
+    console.warn('Store initialization errors detected:', hasErrors);
+  }
+
+  // Platform-specific theme provider placement
+  if (isAndroid) {
+    // For Android: ThemeProvider after store initialization (when navigation context is ready)
+    return <AndroidThemeWrapper />;
+  } else {
+    // For iOS: ThemeProvider already at root level
+    return (
+      <View className="flex-1" style={{ flex: 1 }} key="app-root">
+        <View className={isDark ? 'dark' : ''} style={{ flex: 1 }}>
+          <AlertProvider>
+            <ThemedAppContent />
+          </AlertProvider>
+        </View>
+      </View>
+    );
+  }
+}
+
+export default function RootLayout() {
+  const [loaded] = useFonts({
+    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
+  });
+
+  // Get theme directly from store to avoid hooks that might access navigation
+  const colorScheme = useThemeStore.getState().colorScheme;
+  const [currentColorScheme, setCurrentColorScheme] = React.useState(colorScheme);
+  const isIOS = Platform.OS === 'ios';
+
+  // Initialize theme class manager early
+  React.useEffect(() => {
+    initializeThemeClassManager();
+  }, []);
+
+  // Subscribe to theme changes after mount
+  React.useEffect(() => {
+    const unsubscribe = useThemeStore.subscribe(
+      (state) => state.colorScheme,
+      (scheme) => {
+        setCurrentColorScheme(scheme);
+      }
+    );
+    return unsubscribe;
+  }, []);
+
+  if (!loaded) return null;
+
+  // Platform-specific provider structure
+  if (isIOS) {
+    // iOS: ThemeProvider at root level (before StoreProvider)
+    return (
+      <ThemeProvider value={currentColorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+        <QueryClientProvider client={queryClient}>
+          <StoreProvider>
+            <AppContent />
+          </StoreProvider>
+        </QueryClientProvider>
+      </ThemeProvider>
+    );
+  } else {
+    // Android: No ThemeProvider at root (handled in AppContent after initialization)
+    return (
+      <QueryClientProvider client={queryClient}>
+        <StoreProvider>
+          <AppContent />
+        </StoreProvider>
+      </QueryClientProvider>
+    );
+  }
+}
+```
+
+### **Key Success Factors**
+
+1. **Platform Detection**: Uses `Platform.OS` to detect iOS vs Android and apply appropriate structure
+2. **Proper Initialization Gating**: Android waits for store initialization before rendering ThemeProvider
+3. **Navigation Context Timing**: Android's `AndroidThemeWrapper` only renders after navigation context is established
+4. **Store State Access**: Uses both `useThemeStore.getState()` for immediate access and `useThemeStore(state => state.colorScheme)` for reactive updates
+
+### **Android Fix Details**
+- **Problem**: Navigation context not available when ThemeProvider tried to initialize
+- **Solution**: Created `AndroidThemeWrapper` component that only renders after stores are initialized
+- **Flow**: `StoreProvider → AppContent → (wait for init) → AndroidThemeWrapper → ThemeProvider → ThemedAppContent`
+
+### **iOS Compatibility**
+- **Maintained**: ThemeProvider at root level for strict synchronous navigation context requirements  
+- **Flow**: `ThemeProvider → QueryClientProvider → StoreProvider → AppContent → ThemedAppContent`
+
+### **Testing Results**
+- ✅ iOS Simulator: Theme switching works correctly
+- ✅ Android Emulator: Theme switching works correctly, no navigation context errors
+- ✅ Both platforms: Rapid theme toggles handle correctly
+- ✅ Store initialization: Proper timing on both platforms
+
 ### **Store Initialization Best Practices**
 
 #### **Standard Store Initialization Pattern**
