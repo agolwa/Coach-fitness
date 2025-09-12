@@ -113,12 +113,14 @@ function AppContent() {
   }
 
   return (
-    <View className={colorScheme === 'dark' ? 'dark flex-1' : 'flex-1'}>
-      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <AlertProvider>
-          <ThemedAppContent />
-        </AlertProvider>
-      </ThemeProvider>
+    <View className="flex-1" style={{ flex: 1 }} key="app-root">
+      <View className={colorScheme === 'dark' ? 'dark' : ''} style={{ flex: 1 }}>
+        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+          <AlertProvider>
+            <ThemedAppContent />
+          </AlertProvider>
+        </ThemeProvider>
+      </View>
     </View>
   );
 }
