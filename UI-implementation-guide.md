@@ -1370,3 +1370,269 @@ The navigation context error in `StoreLoadingScreen` has been permanently resolv
 ---
 
 *Last updated: January 2025 - StoreLoadingScreen navigation context dependency eliminated*
+
+---
+
+## 🔧 **January 2025: Platform-Specific Navigation Context Solutions**
+
+### **Working Solutions Backup**
+
+Documentation of platform-specific solutions that have been tested and confirmed working. Use these as fallback implementations if unified solutions fail.
+
+#### **iOS Working Solution (ThemeProvider at Root)**
+**Status**: ✅ Confirmed working on iOS
+**Issue Addressed**: iOS strict synchronous navigation context initialization
+
+```tsx
+// app/_layout.tsx - iOS WORKING VERSION
+import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { useThemeStore } from '@/stores/theme-store';
+
+export default function RootLayout() {
+  const [loaded] = useFonts({
+    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
+  });
+
+  // Get theme directly from store to avoid navigation context dependency
+  const colorScheme = useThemeStore.getState().colorScheme;
+  const [currentColorScheme, setCurrentColorScheme] = React.useState(colorScheme);
+
+  // Subscribe to theme changes after mount
+  React.useEffect(() => {
+    const unsubscribe = useThemeStore.subscribe(
+      (state) => state.colorScheme,
+      (scheme) => {
+        setCurrentColorScheme(scheme);
+      }
+    );
+    return unsubscribe;
+  }, []);
+
+  if (!loaded) return null;
+
+  return (
+    <ThemeProvider value={currentColorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+      <QueryClientProvider client={queryClient}>
+        <StoreProvider>
+          <AppContent />
+        </StoreProvider>
+      </QueryClientProvider>
+    </ThemeProvider>
+  );
+}
+
+function AppContent() {
+  const { isInitialized, hasErrors } = useStoreInitialization();
+  const { authState, isLoading } = useUserStore();
+  const isDark = useThemeStore.getState().colorScheme === 'dark'; // Direct store access
+
+  if (!isInitialized || isLoading) {
+    return <StoreLoadingScreen />;
+  }
+
+  return (
+    <View className={isDark ? 'dark flex-1' : 'flex-1'}>
+      <AlertProvider>
+        <ThemedAppContent />
+      </AlertProvider>
+    </View>
+  );
+}
+```
+
+#### **Android Working Solution (Original Structure)**  
+**Status**: ✅ Confirmed working on Android
+**Issue Addressed**: Android lenient async navigation context timing
+
+```tsx
+// app/_layout.tsx - ANDROID WORKING VERSION
+import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+
+export default function RootLayout() {
+  const [loaded] = useFonts({
+    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
+  });
+
+  if (!loaded) return null;
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <StoreProvider>
+        <AppContent />
+      </StoreProvider>
+    </QueryClientProvider>
+  );
+}
+
+function AppContent() {
+  const { isInitialized, hasErrors } = useStoreInitialization();
+  const { authState, isLoading } = useUserStore();
+  const colorScheme = useThemeStore.getState().colorScheme;
+
+  if (!isInitialized || isLoading) {
+    return <StoreLoadingScreen />;
+  }
+
+  // ThemeProvider placed AFTER store initialization
+  return (
+    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+      <View className={colorScheme === 'dark' ? 'dark flex-1' : 'flex-1'}>
+        <AlertProvider>
+          <ThemedAppContent />
+        </AlertProvider>
+      </View>
+    </ThemeProvider>
+  );
+}
+```
+
+#### **Platform-Specific Implementation Pattern**
+**Use only if unified solution fails**
+
+```tsx
+import { Platform } from 'react-native';
+
+const isIOS = Platform.OS === 'ios';
+const isAndroid = Platform.OS === 'android';
+
+export default function RootLayout() {
+  // Universal setup code
+  const [loaded] = useFonts({...});
+  if (!loaded) return null;
+
+  // Platform-specific provider structure
+  if (isIOS) {
+    return (
+      <ThemeProvider value={currentColorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+        <QueryClientProvider client={queryClient}>
+          <StoreProvider>
+            <AppContent />
+          </StoreProvider>
+        </QueryClientProvider>
+      </ThemeProvider>
+    );
+  } else {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <StoreProvider>
+          <AppContent />
+        </StoreProvider>
+      </QueryClientProvider>
+    );
+  }
+}
+
+function AppContent() {
+  // Common store initialization logic
+  const { isInitialized, hasErrors } = useStoreInitialization();
+  const { authState, isLoading } = useUserStore();
+  const colorScheme = useThemeStore.getState().colorScheme;
+  
+  if (!isInitialized || isLoading) {
+    return <StoreLoadingScreen />;
+  }
+
+  // Platform-specific theme provider placement
+  if (isIOS) {
+    // ThemeProvider already at root level
+    return (
+      <View className={colorScheme === 'dark' ? 'dark flex-1' : 'flex-1'}>
+        <AlertProvider>
+          <ThemedAppContent />
+        </AlertProvider>
+      </View>
+    );
+  } else {
+    // ThemeProvider at component level for Android
+    return (
+      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+        <View className={colorScheme === 'dark' ? 'dark flex-1' : 'flex-1'}>
+          <AlertProvider>
+            <ThemedAppContent />
+          </AlertProvider>
+        </View>
+      </ThemeProvider>
+    );
+  }
+}
+```
+
+### **Store Initialization Best Practices**
+
+#### **Standard Store Initialization Pattern**
+```tsx
+// StoreProvider.tsx - Standard initialization pattern
+export function StoreProvider({ children }: StoreProviderProps) {
+  const initializeUser = useUserStore(state => state.initializeUser);
+  const loadExercises = useExerciseStore(state => state.loadExercises);
+  const initializeWorkout = useWorkoutStore(state => state.initializeWorkout);
+  const initializeTheme = useThemeStore(state => state.initializeTheme);
+
+  // Initialize all stores on mount
+  useEffect(() => {
+    const initializeStores = async () => {
+      try {
+        await Promise.all([
+          initializeTheme?.() || Promise.resolve(),
+          initializeUser?.() || Promise.resolve(),
+          loadExercises?.() || Promise.resolve(),
+          initializeWorkout?.() || Promise.resolve(),
+        ]);
+        console.log('All stores initialized successfully');
+      } catch (error) {
+        console.warn('Some stores failed to initialize:', error);
+      }
+    };
+
+    initializeStores();
+  }, [initializeTheme, initializeUser, loadExercises, initializeWorkout]);
+
+  return <>{children}</>;
+}
+```
+
+#### **Why Store Initialization is Standard Practice**
+1. **User Store**: Must check authentication state, load user preferences from AsyncStorage
+2. **Exercise Store**: Loads exercise library/database for app functionality
+3. **Workout Store**: Restores any active workout session from previous app use  
+4. **Theme Store**: Initializes theme preferences and system appearance listeners
+
+This pattern ensures the app has all necessary data before user interaction, which is standard in React Native apps with Zustand.
+
+### **Usage Guidelines**
+
+#### **Primary Approach**: Unified Solution
+1. Try the consolidated initialization approach first
+2. Remove duplicate initialization logic from StoreProvider
+3. Centralize all initialization in StoreInitializer
+
+#### **Fallback Approach**: Platform-Specific
+1. Use only if unified solution doesn't work
+2. Implement Platform.OS-based conditional rendering
+3. Test thoroughly on both platforms
+4. Document which platform-specific pattern is used
+
+#### **Implementation Decision Tree**
+```
+Navigation Context Error?
+├── Try Unified Solution (consolidated initialization)
+│   ├── Success? → Use unified approach
+│   └── Still failing? → Check platform-specific patterns
+├── iOS failing, Android working? → Use iOS working solution  
+├── Android failing, iOS working? → Use Android working solution
+└── Both failing? → Use platform-specific conditional implementation
+```
+
+### **Testing Checklist**
+**For any navigation context solution:**
+- [ ] App launches without navigation errors
+- [ ] Theme switching works smoothly
+- [ ] Store initialization completes successfully
+- [ ] Navigation functionality remains intact
+- [ ] Both light and dark themes work
+- [ ] Test on both iOS and Android simulators
+- [ ] Verify no console errors during initialization
+
+---
+
+*Backup solutions documented: January 2025*
