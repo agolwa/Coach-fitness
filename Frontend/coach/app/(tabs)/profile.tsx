@@ -158,8 +158,8 @@ export default function ProfileScreen() {
     // Update local state immediately for responsive UI
     setWeightUnit(newUnit);
 
-    // If user is signed in, sync to server
-    if (isSignedIn) {
+    // If user is signed in and not guest, sync to server
+    if (isSignedIn && !isGuest) {
       updateProfileMutation.mutate(
         {
           preferences: {
@@ -454,8 +454,8 @@ export default function ProfileScreen() {
                       // Update local theme immediately for responsive UI
                       toggleColorScheme();
                       
-                      // If user is signed in, sync theme preference to server
-                      if (isSignedIn) {
+                      // If user is signed in and not guest, sync theme preference to server
+                      if (isSignedIn && !isGuest) {
                         const newTheme = value ? 'dark' : 'light';
                         updateProfileMutation.mutate(
                           {
