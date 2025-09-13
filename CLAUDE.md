@@ -43,6 +43,14 @@ This is a **full-stack fitness tracking application** with a **React Native fron
 - `components/compat/`: Compatibility wrappers (ThemeProvider, WeightUnitProvider)
 - Authentication flow handled by `AuthWrapper` and `StoreProvider`
 
+## ByteRover MCP Integration
+
+This project requires the use of ByteRover MCP tools for knowledge management:
+
+- **Before any task**: Always use `byterover-retrieve-knowledge` tool to get related context
+- **After successful tasks**: Always use `byterover-store-knowledge` to store critical information
+- These tools help maintain context across development sessions and preserve important architectural decisions
+
 ## Common Commands
 
 ### Frontend Development (`Frontend/coach/`)
@@ -97,6 +105,23 @@ python main.py
 TESTING=true JWT_SECRET_KEY=test_secret_key_for_testing python main.py
 ```
 
+### Code Quality & Linting (`Backend/`)
+```bash
+cd Backend
+
+# Format code with Black
+black .
+
+# Sort imports with isort
+isort .
+
+# Type checking with mypy
+mypy .
+
+# Run all linting tools in sequence
+black . && isort . && mypy .
+```
+
 ### Testing
 
 #### Frontend Tests
@@ -138,8 +163,17 @@ python -m pytest tests/test_auth_service.py -v
 # Run tests with coverage
 python -m pytest --cov=. --cov-report=html
 
-# Run with environment variables
+# Run with environment variables (commonly used)
 TESTING=true JWT_SECRET_KEY=test_secret_key_for_testing python -m pytest -v
+
+# Run specific test phases
+TESTING=true JWT_SECRET_KEY=test_secret_key_for_testing python -m pytest tests/test_phase_5_2_fastapi_setup.py -v
+TESTING=true JWT_SECRET_KEY=test_secret_key_for_testing python -m pytest tests/test_phase_5_3_authentication.py -v
+TESTING=true JWT_SECRET_KEY=test_secret_key_for_testing python -m pytest tests/test_phase_5_4_workouts.py -v
+TESTING=true JWT_SECRET_KEY=test_secret_key_for_testing python -m pytest tests/test_phase_5_5_user_profile.py -v
+
+# Run tests with virtual environment
+./venv/bin/python -m pytest -v
 ```
 
 ### Linting & Code Quality
@@ -181,10 +215,10 @@ Backend/
 │   ├── auth_service.py  # JWT token management and validation
 │   └── token_service.py # Token generation and refresh logic
 ├── routers/
-│   ├── auth.py          # Authentication endpoints
-│   ├── workouts.py      # Workout CRUD endpoints
-│   ├── exercises.py     # Exercise library endpoints
-│   └── users.py         # User profile endpoints
+│   ├── auth.py          # Authentication endpoints (/auth/login, /auth/refresh, /auth/google)
+│   ├── workouts.py      # Workout CRUD endpoints (/workouts, /workouts/{id})
+│   ├── exercises.py     # Exercise library endpoints (/exercises, /exercises/search)
+│   └── users.py         # User profile endpoints (/users/profile, /users/preferences)
 ├── database/
 │   └── supabase.py      # Database connection and utilities
 └── tests/               # Comprehensive test suite
@@ -192,9 +226,11 @@ Backend/
 
 #### Authentication & Security
 - **JWT Authentication**: Access tokens (15 min) + Refresh tokens (7 days) with automatic rotation
-- **Row Level Security**: Supabase RLS policies ensure user data isolation
+- **Token Endpoints**: `/auth/login`, `/auth/refresh`, `/auth/google` for OAuth integration
+- **Row Level Security**: Supabase RLS policies ensure user data isolation by user_id
 - **CORS Configuration**: Configured for React Native development with proper origins
 - **Environment-based Configuration**: Separate configs for development, staging, and production
+- **Token Families**: Refresh token rotation prevents replay attacks
 
 #### API Integration
 - **React Query Integration**: Frontend uses React Query hooks for server state
@@ -379,6 +415,59 @@ When implementing UI features, verify:
 - Non-visual utility functions
 
 **Do not start any design review unless the user has specified or asked for it, Do NOT auto review for any PRs or changes**
+
+## Troubleshooting
+
+### Common Development Issues
+
+#### Port Conflicts
+```bash
+# Check for port usage
+lsof -i :8082 -i :8000 -i :8081
+
+# Kill conflicting processes
+kill -9 <PID>
+
+# Start frontend on specific port
+cd Frontend/coach && PORT=8083 npm run dev
+
+# Start backend on specific port
+cd Backend && uvicorn main:app --reload --port 8001
+```
+
+#### Android Emulator Backend Connection
+```bash
+# Android emulator cannot access localhost directly
+# Use 10.0.2.2 instead of localhost in .env files for Android testing
+
+# Example: Update Frontend/coach/.env for Android
+EXPO_PUBLIC_API_URL=http://10.0.2.2:8000
+```
+
+#### JWT Authentication Testing Issues
+```bash
+# Always use the test JWT secret for testing
+TESTING=true JWT_SECRET_KEY=test_secret_key_for_testing
+
+# If auth tests fail, check the secret key is set
+echo $JWT_SECRET_KEY
+
+# Clear test database state if needed
+cd Backend && python -c "from database.supabase import get_supabase_client; print('DB connected')"
+```
+
+#### Environment Variable Issues
+```bash
+# Verify environment files exist
+ls Frontend/coach/.env*
+ls Backend/.env
+
+# Check current environment in frontend
+cd Frontend/coach && npm run test:config
+
+# Verify backend environment
+cd Backend && python -c "from core.config import settings; print(settings.model_dump())"
+```
 
 ## Development Notes
 
